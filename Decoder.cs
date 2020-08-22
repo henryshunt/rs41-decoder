@@ -5,16 +5,27 @@ namespace RS41Decoder
 {
     public class Decoder
     {
-        private const int HEADER_LENGTH = 32;
-        private const int HEADER_OFFSET = 24;
-        private const int FRAME_START = (HEADER_OFFSET + HEADER_LENGTH) / 8;
+        private const int STANDARD_FRAME_LENGTH = 320; // Bytes
+        private const int XDATA_LENGTH = 198; // Bytes
+        private const int FRAME_LENGTH = STANDARD_FRAME_LENGTH; // + XDATA_LENGTH; // Bytes
+
+        private const int HEADER_LENGTH = 64; // Bits
+        private const int FRAME_START = (HEADER_LENGTH) / 8; // Hex location
         private const int MASK_LENGTH = 64;
 
-        private const int STANDARD_FRAME_LENGTH = 320;
-        private const int XDATA_LENGTH = 198;
-        private const int FRAME_LENGTH = STANDARD_FRAME_LENGTH + XDATA_LENGTH;
+        private const int POSITION_BLOCK_EMPTY = 0x12B; // Hex location
 
-        private string header = "0000100001101101010100111000100001000100011010010100100000011111";
+
+        private readonly bool[] HEADER = {
+            false, false, false, false, true, false, false, false, // 00001000
+            false, true, true, false, true, true, false, true, // 01101101
+            false, true, false, true, false, false, true, true, // 01010011
+            true, false, false, false, true, false, false, false, // 10001000
+            false, true, false, false, false, true, false, false, // 01000100
+            false, true, true, false, true, false, false, true, // 01101001
+            false, true, false, false, true, false, false, false, // 01001000
+            false, false, false, true, true, true, true, true // 00011111
+        };
 
         private byte[] mask = {
             0x96, 0x83, 0x3E, 0x51, 0xB1, 0x49, 0x08, 0x98, 0x32, 0x05, 0x59, 0x0E, 0xF9, 0x44, 0xC6, 0x26,
@@ -23,53 +34,40 @@ namespace RS41Decoder
             0xD0, 0xBC, 0xB4, 0xB6, 0x06, 0xAA, 0xF4, 0x23, 0x78, 0x6E, 0x3B, 0xAE, 0xBF, 0x7B, 0x4C, 0xC1
         };
 
-        private const int POSITION_BLOCK_EMPTY = 0x12B;
+        public bool[] headerBuffer = new bool[HEADER_LENGTH];
+        public int headerBufferPos = -1;
+        public bool hasFoundHeader = false;
 
-        private byte[] frame = new byte[FRAME_LENGTH];
-
-        public char[] buffer = new char[HEADER_LENGTH];
-        public int bufferPosition = -1;
-
-        public bool hasFoundHeader;
-
-        public Decoder()
-        {
-            frame[0] = 0x86;
-            frame[1] = 0x35;
-            frame[2] = 0xf4;
-            frame[3] = 0x40;
-            frame[4] = 0x93;
-            frame[5] = 0xdf;
-            frame[6] = 0x1a;
-            frame[7] = 0x60;
-        }
-
-
-        public void IncrementHeaderBuffer()
-        {
-            bufferPosition = (bufferPosition + 1) % HEADER_LENGTH;
-        }
 
         public void DecodeLoop(BinaryReader reader, Demodulator demodulator)
         {
-            char[] bitBuffer = new char[8];
-            int bitCount = 0;
-
-            byte b;
-            int byteCount = FRAME_START;
+            bool[] frameBits = new bool[FRAME_LENGTH * 8];
+            Array.Copy(HEADER, frameBits, HEADER_LENGTH);
+            int frameBitCount = FRAME_START * 8;
 
             while (true)
             {
-                (int, int) bits = demodulator.ReadBits(reader); // Value, count
+                (int, int) bits; // Value, count
 
+                try
+                {
+                    bits = demodulator.ReadBits(reader);
+                }
+                catch (EndOfStreamException)
+                {
+                    return;
+                }
+
+                // If no bits were received from the audio...
                 if (bits.Item2 == 0)
                 {
-                    if (byteCount > POSITION_BLOCK_EMPTY)
+                    // ...then if we've received up to the end of a frame, start a new frame
+                    if (frameBitCount / 8 > POSITION_BLOCK_EMPTY)
                     {
-                        DecodeFrame();
-                        bitCount = 0;
-                        byteCount = FRAME_START;
+                        frameBitCount = FRAME_START * 8;
                         hasFoundHeader = false;
+
+                        new FrameDecoder().Decode(frameBits);
                     }
 
                     continue;
@@ -77,8 +75,8 @@ namespace RS41Decoder
 
                 for (int i = 0; i < bits.Item2; i++)
                 {
-                    IncrementHeaderBuffer();
-                    buffer[bufferPosition] = (char)(0x30 + bits.Item1);
+                    headerBufferPos = (headerBufferPos + 1) % HEADER_LENGTH;
+                    headerBuffer[headerBufferPos] = Convert.ToBoolean(bits.Item1);
 
                     if (!hasFoundHeader)
                     {
@@ -87,16 +85,14 @@ namespace RS41Decoder
                     }
                     else
                     {
-                        bitBuffer[bitCount] = (char)bits.Item1;
-                        bitCount++;
+                        frameBits[frameBitCount++] = Convert.ToBoolean(bits.Item1);
 
-                        if (bitCount == 8)
+                        if (frameBitCount / 8 == FRAME_LENGTH)
                         {
-                            bitCount = 0;
-                            b = bitsToByte(bitBuffer);
+                            frameBitCount = FRAME_START * 8;
+                            hasFoundHeader = false;
 
-                            frame[byteCount] = (byte)(b ^ mask[byteCount % MASK_LENGTH]);
-                            byteCount++;
+                            new FrameDecoder().Decode(frameBits);
                         }
                     }
                 }
@@ -106,14 +102,14 @@ namespace RS41Decoder
         private int CheckForFrameHeader()
         {
             int i = 0;
-            int j = bufferPosition;
+            int j = headerBufferPos;
 
             while (i < HEADER_LENGTH)
             {
                 if (j < 0)
                     j = HEADER_LENGTH - 1;
 
-                if (buffer[j] != header[HEADER_OFFSET + HEADER_LENGTH - 1 - i])
+                if (headerBuffer[j] != HEADER[HEADER_LENGTH - 1 - i])
                     break;
 
                 j--;
@@ -121,35 +117,6 @@ namespace RS41Decoder
             }
 
             return i;
-        }
-
-        private byte bitsToByte(char[] bits)
-        {
-            byte d = 1;
-            byte byteval = 0;
-
-            for (int i = 0; i < 8; i++) // little endian
-            {
-                if (bits[i] == 1)
-                    byteval += d;
-                else if (bits[i] == 0)
-                    byteval += 0;
-                else throw new Exception();
-
-                d <<= 1;
-            }
-
-            return byteval;
-        }
-
-        private void DecodeFrame()
-        {
-            Console.WriteLine("PRINT FRAME");
-
-            for (int i = 0; i < 320; i++)
-                Console.Write(frame[i].ToString("x2"));
-
-            Console.WriteLine();
         }
     }
 }

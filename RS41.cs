@@ -39,5 +39,10 @@ namespace RS41Decoder
         {
 
         }
+
+        public static void PrintFrameTable(byte[] frame)
+        {
+
+        }
     }
 }
