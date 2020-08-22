@@ -1,27 +1,43 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 namespace RS41Decoder
 {
     public class RS41
     {
-        private string input;
+        private string filePath;
 
-        public RS41(string input)
+        private Demodulator demodulator;
+        private Decoder decoder;
+
+        public RS41(string filePath)
         {
-            this.input = input;
+            this.filePath = filePath;
         }
 
-        public void StartDecoding()
+        public bool StartDecoding()
         {
-            Demodulation d = new Demodulation();
-            Decoder dc = new Decoder();
+            demodulator = new Demodulator();
+            decoder = new Decoder();
 
-            using (FileStream fileStream = File.OpenRead(input))
+            using (FileStream fileStream = File.OpenRead(filePath))
             {
                 using (BinaryReader reader = new BinaryReader(fileStream))
-                    dc.DecodeLoop(reader, d);
+                {
+                    demodulator.ReadWavHeader(reader);
+
+                    if (demodulator.BitsPerSample != 8 && demodulator.BitsPerSample != 16)
+                        return false;
+
+                    decoder.DecodeLoop(reader, demodulator);
+                }
             }
+
+            return true;
+        }
+
+        public void StopDecoding()
+        {
+
         }
     }
 }

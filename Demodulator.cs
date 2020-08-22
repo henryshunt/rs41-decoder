@@ -4,19 +4,18 @@ using System.Text;
 
 namespace RS41Decoder
 {
-    public class Demodulation
+    public class Demodulator
     {
-        public int NumberOfChannels { get; set; }
-        public int SampleRate { get; set; }
-        public int BitsPerSample { get; set; }
-        public double SamplesPerBit { get; set; }
+        public int NumberOfChannels { get; private set; }
+        public int SampleRate { get; private set; }
+        public int BitsPerSample { get; private set; }
+        public double SamplesPerBit { get; private set; }
 
-        private static int BAUD_RATE = 4800;
+        private const int BAUD_RATE = 4800;
+        private const int WAV_CHANNEL = 0;
 
-        private bool hasReadWavHeader = false;
-
-        private int par = 1;
-        private int parOld = 1;
+        private int currentSampleSign = 1;
+        private int previousSampleSign = 1;
 
 
         public bool ReadWavHeader(BinaryReader reader)
@@ -90,9 +89,6 @@ namespace RS41Decoder
 
             BitsPerSample = buffer[0] + (buffer[1] << 8);
 
-            if (BitsPerSample != 8 && BitsPerSample != 16)
-                return false;
-
             // Read until "data" is found
             while (true)
             {
@@ -118,42 +114,49 @@ namespace RS41Decoder
 
         public short ReadWavSample(BinaryReader reader)
         {
-            int sample = 0;
+            short sample = 0;
 
             for (int channel = 0; channel < 2; channel++)
             {
-                byte b = reader.ReadByte();
+                byte buffer = reader.ReadByte();
 
-                if (channel == 0)
-                    sample = b;
+                if (channel == WAV_CHANNEL)
+                    sample = buffer;
 
-                b = reader.ReadByte();
+                if (BitsPerSample == 16)
+                {
+                    buffer = reader.ReadByte();
 
-                if (channel == 0)
-                    sample += b << 8;
+                    if (channel == WAV_CHANNEL)
+                        sample += (short)(buffer << 8);
+                }
             }
 
-            return (short)sample;
+            if (BitsPerSample == 8)
+                return (short)(sample - 128);
+            else return sample;
         }
 
-        public Tuple<int, int> ReadBits(BinaryReader reader)
+        public (int, int) ReadBits(BinaryReader reader)
         {
-            int sampleCount = 0;
+            int counter = 0;
 
+            // Read a sequence of samples until we reach one that crosses the zero-point
             do
             {
-                int sample = ReadWavSample(reader);
+                short sample = ReadWavSample(reader);
 
-                parOld = par;
-                par = (sample >= 0) ? 1 : -1;
-                sampleCount++;
+                previousSampleSign = currentSampleSign;
+                currentSampleSign = (sample >= 0) ? 1 : -1;
+                counter++;
             }
-            while (par * parOld > 0);
+            while (currentSampleSign * previousSampleSign > 0);
 
-            double bitCount = sampleCount / 7.81;
+            // Calculate how many bits we have in the sequence of samples
+            double bitCount = counter / SamplesPerBit;
 
-            Tuple<int, int> ret = new Tuple<int, int>((1 + parOld) / 2, (int)(bitCount + 0.5));
-            return ret;
+            // Return bit value and number of bits
+            return ((1 + previousSampleSign) / 2, (int)(bitCount + 0.5));
         }
     }
 }
