@@ -9,7 +9,7 @@ namespace RS41Decoder
         public int NumberOfChannels { get; private set; }
         public int SampleRate { get; private set; }
         public int BitsPerSample { get; private set; }
-        public double SamplesPerBit { get; private set; }
+        public double SamplesPerBit { get; private set; } // Number of audio samples that encode one bit
 
         private const int BAUD_RATE = 4800;
         private const int WAV_CHANNEL = 0;
@@ -139,24 +139,24 @@ namespace RS41Decoder
 
         public (int, int) ReadBits(BinaryReader reader)
         {
-            int counter = 0;
+            int sampleCount = 0;
 
-            // Read a sequence of samples until we reach one that crosses the zero-point
+            // Read samples until we read one that crosses the zero-point
             do
             {
                 short sample = ReadWavSample(reader);
 
                 previousSampleSign = currentSampleSign;
                 currentSampleSign = (sample >= 0) ? 1 : -1;
-                counter++;
+                sampleCount++;
             }
-            while (currentSampleSign * previousSampleSign > 0);
+            while (currentSampleSign == previousSampleSign);
 
             // Calculate how many bits we have in the sequence of samples
-            double bitCount = counter / SamplesPerBit;
+            double bitCount = sampleCount / SamplesPerBit;
+            int bitCount2 = (int)(bitCount + 0.5);
 
-            // Return bit value and number of bits
-            return ((1 + previousSampleSign) / 2, (int)(bitCount + 0.5));
+            return (previousSampleSign == -1 ? 0 : 1, bitCount2);
         }
     }
 }
