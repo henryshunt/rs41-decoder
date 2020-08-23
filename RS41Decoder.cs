@@ -1,15 +1,15 @@
 ﻿using System.IO;
 
-namespace RS41Decoder
+namespace RSDecoder.RS41
 {
-    public class RS41
+    public class RS41Decoder
     {
         private string filePath;
 
         private Demodulator demodulator;
         private Decoder decoder;
 
-        public RS41(string filePath)
+        public RS41Decoder(string filePath)
         {
             this.filePath = filePath;
         }
@@ -36,11 +36,6 @@ namespace RS41Decoder
         }
 
         public void StopDecoding()
-        {
-
-        }
-
-        public static void PrintFrameTable(byte[] frame)
         {
 
         }

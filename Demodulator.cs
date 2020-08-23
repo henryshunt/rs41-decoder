@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace RS41Decoder
+namespace RSDecoder.RS41
 {
     public class Demodulator
     {
