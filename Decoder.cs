@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace RSDecoder.RS41
@@ -9,11 +10,11 @@ namespace RSDecoder.RS41
         public int headerBufferPos = -1;
         public bool hasFoundHeader = false;
 
-        public void DecodeLoop(BinaryReader reader, Demodulator demodulator)
+        public void DecodingLoop(BinaryReader reader, Demodulator demodulator)
         {
             bool[] frameBits = new bool[Constants.FRAME_LENGTH * 8];
             Array.Copy(Constants.HEADER_BITS, frameBits, Constants.HEADER_LENGTH_BITS);
-            int frameBitCount = Constants.POSITION_POST_HEADER * 8;
+            int frameBitCount = Constants.POS_POST_HEADER * 8;
 
             while (true)
             {
@@ -32,14 +33,16 @@ namespace RSDecoder.RS41
                 if (bits.Item2 == 0)
                 {
                     // ...then if we've received up to the end of a frame, start a new frame
-                    if (frameBitCount / 8 > Constants.POSITION_BLOCK_EMPTY)
+                    if (frameBitCount / 8 > Constants.POS_BLOCK_EMPTY)
                     {
-                        frameBitCount = Constants.POSITION_POST_HEADER * 8;
+                        frameBitCount = Constants.POS_POST_HEADER * 8;
                         hasFoundHeader = false;
 
                         FrameDecoder frame = new FrameDecoder(frameBits);
                         frame.Decode();
-                        Console.WriteLine(frame.ToString());
+
+                        //Console.WriteLine(frame.ToString());
+                        frame.PrintFrameTable();
                     }
 
                     continue;
@@ -61,12 +64,14 @@ namespace RSDecoder.RS41
 
                         if (frameBitCount / 8 == Constants.FRAME_LENGTH)
                         {
-                            frameBitCount = Constants.POSITION_POST_HEADER * 8;
+                            frameBitCount = Constants.POS_POST_HEADER * 8;
                             hasFoundHeader = false;
 
                             FrameDecoder frame = new FrameDecoder(frameBits);
                             frame.Decode();
-                            Console.WriteLine(frame.ToString());
+
+                            //Console.WriteLine(frame.ToString());
+                            frame.PrintFrameTable();
                         }
                     }
                 }

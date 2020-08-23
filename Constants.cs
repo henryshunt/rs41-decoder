@@ -26,7 +26,33 @@
         };
         public static int XOR_MASK_LENGTH = 64;
 
-        public static int POSITION_POST_HEADER = HEADER_LENGTH_BITS / 8;
-        public const int POSITION_BLOCK_EMPTY = 0x12B;
+        public static int POS_POST_HEADER = HEADER_LENGTH_BITS / 8; // First byte after header
+
+        // Status block
+        public static int POS_FRAME_TYPE = 0x038; // 1 byte
+        public static int POS_SERIAL_NUMBER = 0x03D; // 8 bytes
+        public static int POS_FRAME_NUMBER = 0x03B; // 2 bytes
+        public static int POS_BATTERY_VOLTAGE = 0x045; // 1 byte
+        public static int POS_SUBFRAME_NUMBER = 0x052; // 1 byte
+
+        // Measurement block
+        public static int POS_TEMPERATURE_MAIN = 0; // 3 bytes
+        public static int POS_TEMPERATURE_REF1 = 0; // 3 bytes
+        public static int POS_TEMPERATURE_REF2 = 0; // 3 bytes
+        public static int POS_HUMIDITY_MAIN = 0; // 3 bytes
+        public static int POS_HUMIDITY_REF1 = 0; // 3 bytes
+        public static int POS_HUMIDITY_REF2 = 0; // 3 bytes
+        public static int POS_HUMIDITY_TEMPERATURE_MAIN = 0; // 3 bytes
+        public static int POS_HUMIDITY_TEMPERATURE_REF1 = 0; // 3 bytes
+        public static int POS_HUMIDITY_TEMPERATURE_REF2 = 0; // 3 bytes
+        public static int POS_PRESSURE_MAIN = 0; // 3 bytes
+        public static int POS_PRESSURE_REF1 = 0; // 3 bytes
+        public static int POS_PRESSURE_REF2 = 0; // 3 bytes
+
+        // GPS info block
+        public static int POS_GPS_WEEK = 0x095; // 2 bytes
+        public static int POS_GPS_TIME_OF_WEEK = 0x097; // 4 bytes
+
+        public static int POS_BLOCK_EMPTY = 0x12B;
     }
 }
