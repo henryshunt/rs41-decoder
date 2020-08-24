@@ -40,6 +40,9 @@ namespace RSDecoder.RS41
             DecodeFrameTime(DecodeGpsWeek(), DecodeGpsSecondsIntoWeek());
 
             DecodePosition();
+            DecodeGpsSatelliteCount();
+            DecodeGpsVelocityAccuracy();
+            DecodeGpsPositionAccuracy();
 
             if (!decodedFrame.IsExtendedFrame)
             {
@@ -260,6 +263,22 @@ namespace RSDecoder.RS41
                 direction += 360;
 
             return (vH, direction, vU);
+        }
+
+
+        private void DecodeGpsSatelliteCount()
+        {
+            decodedFrame.GpsSatelliteCount = frameBytes[Constants.POS_GPS_SATELLITE_COUNT];
+        }
+
+        private void DecodeGpsVelocityAccuracy()
+        {
+            decodedFrame.VelocityAccuracy = frameBytes[Constants.POS_VELOCITY_ACCURACY] / (double)10;
+        }
+
+        private void DecodeGpsPositionAccuracy()
+        {
+            decodedFrame.PositionAccuracy = frameBytes[Constants.POS_POSITION_ACCURACY] / (double)10;
         }
 
 
