@@ -75,7 +75,7 @@ namespace RSDecoder.RS41
                 return false;
 
             SampleRate = BitConverter.ToInt32(buffer);
-            SamplesPerBit = SampleRate / (float)BAUD_RATE;
+            SamplesPerBit = SampleRate / (double)BAUD_RATE;
 
             // Skip along
             if (reader.Read(buffer, 0, 4) < 4)

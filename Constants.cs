@@ -53,6 +53,14 @@
         public static int POS_GPS_WEEK = 0x095; // 2 bytes
         public static int POS_GPS_TIME_OF_WEEK = 0x097; // 4 bytes
 
+        // GPS location block
+        public static int POS_ECEF_POSITION_X = 0x114; // 4 bytes
+        public static int POS_ECEF_POSITION_Y = 0x118; // 4 bytes
+        public static int POS_ECEF_POSITION_Z = 0x11C; // 4 bytes
+        public static int POS_ECEF_VELOCITY_X = 0x120; // 2 bytes
+        public static int POS_ECEF_VELOCITY_Y = 0x122; // 2 bytes
+        public static int POS_ECEF_VELOCITY_Z = 0x124; // 2 bytes
+
         public static int POS_BLOCK_EMPTY = 0x12B;
     }
 }
