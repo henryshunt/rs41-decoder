@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RS41Decoder.RS41
+namespace RSDecoder.RS41
 {
     public class Frame
     {

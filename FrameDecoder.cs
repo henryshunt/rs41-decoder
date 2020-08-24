@@ -1,9 +1,5 @@
-﻿using RS41Decoder.RS41;
-using System;
+﻿using System;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Reflection.PortableExecutable;
-using System.Text;
 
 namespace RSDecoder.RS41
 {

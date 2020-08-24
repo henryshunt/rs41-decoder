@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <AssemblyName>RS41Decoder</AssemblyName>
+    <RootNamespace>RSDecoder.RS41</RootNamespace>
   </PropertyGroup>
 
 </Project>
