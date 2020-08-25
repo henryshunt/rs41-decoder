@@ -5,71 +5,40 @@ namespace RSDecoder.RS41
 {
     public class Decoder
     {
-        public bool[] headerBuffer = new bool[Constants.HEADER_LENGTH_BITS];
+        public bool[] headerBuffer = new bool[Constants.FRAME_HEADER.Length];
         public int headerBufferPos = -1;
         public bool hasFoundHeader = false;
 
         public void DecodingLoop(BinaryReader reader, Demodulator demodulator)
         {
             bool[] frameBits = new bool[Constants.FRAME_LENGTH * 8];
-            Array.Copy(Constants.HEADER_BITS, frameBits, Constants.HEADER_LENGTH_BITS);
-            int frameBitCount = Constants.POS_POST_HEADER * 8;
+            Array.Copy(Constants.FRAME_HEADER, frameBits, Constants.FRAME_HEADER.Length);
+
+            int frameBitCount = Constants.POS_ECC * 8;
 
             while (true)
             {
-                (int, int) bits; // Value, count
-
-                try
+                foreach (bool bit in demodulator.ReadBits(reader))
                 {
-                    bits = demodulator.ReadBits(reader);
-                }
-                catch (EndOfStreamException)
-                {
-                    return;
-                }
-
-                // If no bits were received from the audio...
-                if (bits.Item2 == 0)
-                {
-                    // ...then if we've received up to the end of a frame, start a new frame
-                    if (frameBitCount / 8 > Constants.POS_BLOCK_EMPTY)
-                    {
-                        frameBitCount = Constants.POS_POST_HEADER * 8;
-                        hasFoundHeader = false;
-
-                        FrameDecoder frame = new FrameDecoder(frameBits);
-                        frame.Decode();
-
-                        //Console.WriteLine(frame.ToString());
-                        frame.PrintFrameTable();
-                    }
-
-                    continue;
-                }
-
-                for (int i = 0; i < bits.Item2; i++)
-                {
-                    headerBufferPos = (headerBufferPos + 1) % Constants.HEADER_LENGTH_BITS;
-                    headerBuffer[headerBufferPos] = Convert.ToBoolean(bits.Item1);
+                    headerBufferPos = (headerBufferPos + 1) % Constants.FRAME_HEADER.Length;
+                    headerBuffer[headerBufferPos] = bit;
 
                     if (!hasFoundHeader)
                     {
-                        if (CheckForFrameHeader() >= Constants.HEADER_LENGTH_BITS)
+                        if (CheckForFrameHeader())
                             hasFoundHeader = true;
                     }
                     else
                     {
-                        frameBits[frameBitCount++] = Convert.ToBoolean(bits.Item1);
+                        frameBits[frameBitCount++] = bit;
 
                         if (frameBitCount / 8 == Constants.FRAME_LENGTH)
                         {
-                            frameBitCount = Constants.POS_POST_HEADER * 8;
+                            frameBitCount = Constants.POS_ECC * 8;
                             hasFoundHeader = false;
 
                             FrameDecoder frame = new FrameDecoder(frameBits);
                             frame.Decode();
-
-                            //Console.WriteLine(frame.ToString());
                             frame.PrintFrameTable();
                         }
                     }
@@ -77,24 +46,30 @@ namespace RSDecoder.RS41
             }
         }
 
-        private int CheckForFrameHeader()
+        /// <summary>
+        /// Determines whether the circular header buffer contains the frame header.
+        /// </summary>
+        /// <returns>
+        /// true if the header buffer contains the frame header, otherwise false.
+        /// </returns>
+        private bool CheckForFrameHeader()
         {
             int i = 0;
             int j = headerBufferPos;
 
-            while (i < Constants.HEADER_LENGTH_BITS)
+            while (i < Constants.FRAME_HEADER.Length)
             {
                 if (j < 0)
-                    j = Constants.HEADER_LENGTH_BITS - 1;
+                    j = Constants.FRAME_HEADER.Length - 1;
 
-                if (headerBuffer[j] != Constants.HEADER_BITS[Constants.HEADER_LENGTH_BITS - 1 - i])
+                if (headerBuffer[j] != Constants.FRAME_HEADER[Constants.FRAME_HEADER.Length - 1 - i])
                     break;
 
                 j--;
                 i++;
             }
 
-            return i;
+            return i == Constants.FRAME_HEADER.Length ? true : false;
         }
     }
 }

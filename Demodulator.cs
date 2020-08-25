@@ -137,7 +137,7 @@ namespace RSDecoder.RS41
             else return sample;
         }
 
-        public (int, int) ReadBits(BinaryReader reader)
+        public bool[] ReadBits(BinaryReader reader)
         {
             int sampleCount = 0;
 
@@ -156,7 +156,12 @@ namespace RSDecoder.RS41
             double bitCount = sampleCount / SamplesPerBit;
             int bitCount2 = (int)(bitCount + 0.5);
 
-            return (previousSampleSign == -1 ? 0 : 1, bitCount2);
+            bool[] bits = new bool[bitCount2];
+
+            for (int i = 0; i < bitCount2; i++)
+                bits[i] = previousSampleSign == -1 ? false : true;
+
+            return bits;
         }
     }
 }

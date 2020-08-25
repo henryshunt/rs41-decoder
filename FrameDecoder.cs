@@ -65,7 +65,7 @@ namespace RSDecoder.RS41
         private void DecodeXor()
         {
             for (int i = 0; i < Constants.FRAME_LENGTH; i++)
-                frameBytes[i] = (byte)(frameBytes[i] ^ Constants.XOR_MASK[i % Constants.XOR_MASK_LENGTH]);
+                frameBytes[i] = (byte)(frameBytes[i] ^ Constants.FRAME_MASK[i % Constants.FRAME_MASK.Length]);
         }
 
         private byte BoolArrayToByte(bool[] bits)

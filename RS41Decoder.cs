@@ -28,7 +28,14 @@ namespace RSDecoder.RS41
                     if (demodulator.BitsPerSample != 8 && demodulator.BitsPerSample != 16)
                         return false;
 
-                    decoder.DecodingLoop(reader, demodulator);
+                    try
+                    {
+                        decoder.DecodingLoop(reader, demodulator);
+                    }
+                    catch (EndOfStreamException)
+                    {
+                        return true;
+                    }
                 }
             }
 
