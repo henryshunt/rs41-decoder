@@ -5,18 +5,22 @@ namespace RSDecoder.RS41
 {
     public class FrameDecoder
     {
-        private bool[] frameBits = new bool[Constants.FRAME_LENGTH * 8];
-        private byte[] frameBytes = new byte[Constants.FRAME_LENGTH];
+        private readonly bool[] frameBits;
+        private readonly byte[] frameBytes = new byte[Constants.FRAME_LENGTH];
 
-        private Frame decodedFrame = new Frame();
+        private readonly Frame decodedFrame = new Frame();
 
         public FrameDecoder(bool[] frameBits)
         {
             if (frameBits == null)
-                throw new ArgumentNullException();
+                throw new ArgumentNullException(nameof(frameBits));
 
             if (frameBits.Length != Constants.FRAME_LENGTH * 8)
-                throw new ArgumentException();
+            {
+                throw new ArgumentException(string.Format(
+                    "Argument {0} must contain {1} items", nameof(frameBits), Constants.FRAME_LENGTH * 8),
+                    nameof(frameBits));
+            }
 
             this.frameBits = frameBits;
         }
@@ -42,8 +46,8 @@ namespace RSDecoder.RS41
 
             if (!decodedFrame.IsExtendedFrame)
             {
-                for (int i = 0; i < Constants.EXTENDED_DATA_LENGTH; i++)
-                    frameBytes[Constants.STANDARD_FRAME_LENGTH + i] = 0;
+                for (int i = Constants.STANDARD_FRAME_LENGTH - 1; i < Constants.FRAME_LENGTH; i++)
+                    frameBytes[i] = 0;
             }
 
             return decodedFrame;
@@ -304,7 +308,7 @@ namespace RSDecoder.RS41
 
                 for (int j = 0; j <= 0xF; j++)
                 {
-                    if ((i * 16) + j == 0x206)
+                    if ((i * 16) + j == Constants.FRAME_LENGTH)
                     {
                         stop = true;
                         break;

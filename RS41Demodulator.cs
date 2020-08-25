@@ -4,21 +4,38 @@ using System.Text;
 
 namespace RSDecoder.RS41
 {
-    public class Demodulator
+    public class RS41Demodulator
     {
         public int NumberOfChannels { get; private set; }
         public int SampleRate { get; private set; }
         public int BitsPerSample { get; private set; }
-        public double SamplesPerBit { get; private set; } // Number of audio samples that encode one bit
+        public double SamplesPerBit { get; private set; }
 
-        private const int BAUD_RATE = 4800;
-        private const int WAV_CHANNEL = 0;
+        private string filePath;
+        private FileStream fileStream;
+        private BinaryReader reader;
+
+        private bool hasReadWavHeader = false;
 
         private int currentSampleSign = 1;
         private int previousSampleSign = 1;
 
+        public RS41Demodulator(string filePath)
+        {
+            if (filePath == null)
+                throw new ArgumentNullException(nameof(filePath));
 
-        public bool ReadWavHeader(BinaryReader reader)
+            this.filePath = filePath;
+        }
+
+
+        private void OpenStream()
+        {
+            fileStream = File.OpenRead(filePath);
+            reader = new BinaryReader(fileStream);
+        }
+
+        private bool ReadWavHeader()
         {
             byte[] buffer = new byte[4];
 
@@ -75,7 +92,7 @@ namespace RSDecoder.RS41
                 return false;
 
             SampleRate = BitConverter.ToInt32(buffer);
-            SamplesPerBit = SampleRate / (double)BAUD_RATE;
+            SamplesPerBit = SampleRate / (double)Constants.BAUD_RATE;
 
             // Skip along
             if (reader.Read(buffer, 0, 4) < 4)
@@ -112,22 +129,33 @@ namespace RSDecoder.RS41
             return true;
         }
 
-        public short ReadWavSample(BinaryReader reader)
+        public short ReadWavSample()
         {
+            if (!hasReadWavHeader)
+            {
+                hasReadWavHeader = true;
+
+                OpenStream();
+                ReadWavHeader();
+
+                if (BitsPerSample != 8 && BitsPerSample != 16)
+                    return 0;
+            }
+
             short sample = 0;
 
             for (int channel = 0; channel < 2; channel++)
             {
                 byte buffer = reader.ReadByte();
 
-                if (channel == WAV_CHANNEL)
+                if (channel == Constants.WAV_CHANNEL)
                     sample = buffer;
 
                 if (BitsPerSample == 16)
                 {
                     buffer = reader.ReadByte();
 
-                    if (channel == WAV_CHANNEL)
+                    if (channel == Constants.WAV_CHANNEL)
                         sample += (short)(buffer << 8);
                 }
             }
@@ -137,14 +165,14 @@ namespace RSDecoder.RS41
             else return sample;
         }
 
-        public bool[] ReadBits(BinaryReader reader)
+        public bool[] ReadBits()
         {
             int sampleCount = 0;
 
             // Read samples until we read one that crosses the zero-point
             do
             {
-                short sample = ReadWavSample(reader);
+                short sample = ReadWavSample();
 
                 previousSampleSign = currentSampleSign;
                 currentSampleSign = (sample >= 0) ? 1 : -1;

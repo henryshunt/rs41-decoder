@@ -2,6 +2,9 @@
 {
     public static class Constants
     {
+        public const int BAUD_RATE = 4800;
+        public const int WAV_CHANNEL = 0;
+
         public static int STANDARD_FRAME_LENGTH = 320;
         public static int EXTENDED_DATA_LENGTH = 198;
         public static int FRAME_LENGTH = STANDARD_FRAME_LENGTH + EXTENDED_DATA_LENGTH;
