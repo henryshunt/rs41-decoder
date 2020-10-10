@@ -6,4 +6,8 @@
     <RootNamespace>RSDecoder.RS41</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="STH1123.ReedSolomon" Version="2.1.0" />
+  </ItemGroup>
+
 </Project>

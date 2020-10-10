@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30330.147
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RS41Decoder", "RS41Decoder.csproj", "{F72DB8C4-8EF0-430B-99BE-5A8D36E1C2D6}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RS41DecoderTest", "..\RS41DecoderTest\RS41DecoderTest.csproj", "{5D8EDAA7-DA45-470F-89E7-8DFEFE0B91AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{F72DB8C4-8EF0-430B-99BE-5A8D36E1C2D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F72DB8C4-8EF0-430B-99BE-5A8D36E1C2D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F72DB8C4-8EF0-430B-99BE-5A8D36E1C2D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D8EDAA7-DA45-470F-89E7-8DFEFE0B91AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D8EDAA7-DA45-470F-89E7-8DFEFE0B91AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D8EDAA7-DA45-470F-89E7-8DFEFE0B91AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D8EDAA7-DA45-470F-89E7-8DFEFE0B91AE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -31,6 +31,9 @@
         public static int POS_ECC = 0x08; // 48 bytes
 
         // Status block
+        public static int POS_STATUS_BLOCK = 0x039;
+        public static int STATUS_BLOCK_HEADER = 0x7928;
+
         public static int POS_FRAME_TYPE = 0x038; // 1 byte
         public static int POS_FRAME_NUMBER = 0x03B; // 2 bytes
         public static int POS_SERIAL_NUMBER = 0x03D; // 8 bytes
@@ -38,6 +41,9 @@
         public static int POS_SUBFRAME_NUMBER = 0x052; // 1 byte
 
         // Measurement block
+        public static int POS_MEASUREMENT_BLOCK = 0x065;
+        public static int MEASUREMENT_BLOCK_HEADER = 0x7A2A;
+
         public static int POS_TEMPERATURE_MAIN = 0; // 3 bytes
         public static int POS_TEMPERATURE_REF1 = 0; // 3 bytes
         public static int POS_TEMPERATURE_REF2 = 0; // 3 bytes
@@ -51,11 +57,21 @@
         public static int POS_PRESSURE_REF1 = 0; // 3 bytes
         public static int POS_PRESSURE_REF2 = 0; // 3 bytes
 
-        // GPS time and status block
+        // GPS info block
+        public static int POS_GPS_INFO_BLOCK = 0x093;
+        public static int GPS_INFO_BLOCK_HEADER = 0x7C1E;
+
         public static int POS_GPS_WEEK = 0x095; // 2 bytes
         public static int POS_GPS_TIME_OF_WEEK = 0x097; // 4 bytes
 
+        // GPS raw block
+        public static int POS_GPS_RAW_BLOCK = 0x0B5;
+        public static int GPS_RAW_BLOCK_HEADER = 0x7D59;
+
         // GPS position block
+        public static int POS_GPS_POSITION_BLOCK = 0x112;
+        public static int GPS_POSITION_BLOCK_HEADER = 0x7B15;
+
         public static int POS_ECEF_POSITION_X = 0x114; // 4 bytes
         public static int POS_ECEF_POSITION_Y = 0x118; // 4 bytes
         public static int POS_ECEF_POSITION_Z = 0x11C; // 4 bytes

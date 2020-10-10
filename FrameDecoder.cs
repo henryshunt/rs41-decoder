@@ -31,6 +31,8 @@ namespace RSDecoder.RS41
             DecodeBytes();
             DecodeXor();
 
+            new FrameErrorCorrection(frameBytes, decodedFrame).Correct();
+
             DecodeFrameType();
             DecodeFrameNumber();
             DecodeSerialNumber();

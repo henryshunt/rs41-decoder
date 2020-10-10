@@ -4,6 +4,12 @@ namespace RSDecoder.RS41
 {
     public class Frame
     {
+        public bool IsStatusBlockValid { get; set; }
+        public bool IsMeasurementBlockValid { get; set; }
+        public bool IsGpsInfoBlockValid { get; set; }
+        public bool IsGpsRawBlockValid { get; set; }
+        public bool IsGpsPositionBlockValid { get; set; }
+
         public int FrameNumber { get; set; }
         public bool IsExtendedFrame { get; set; }
         public int SubframeNumber { get; set; }
