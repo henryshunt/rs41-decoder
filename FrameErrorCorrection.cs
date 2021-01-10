@@ -61,25 +61,25 @@ namespace RSDecoder.RS41
             decodedFrame.IsGpsRawBlockValid = CheckBlockValidity(Constants.POS_GPS_RAW_BLOCK, Constants.GPS_RAW_BLOCK_HEADER);
             decodedFrame.IsGpsPositionBlockValid = CheckBlockValidity(Constants.POS_GPS_POSITION_BLOCK, Constants.GPS_POSITION_BLOCK_HEADER);
 
-            for (int i = Constants.STANDARD_FRAME_LENGTH; i < Constants.FRAME_LENGTH; i++)
-                frameBytes[i] = 0;
+            //for (int i = Constants.STANDARD_FRAME_LENGTH; i < Constants.FRAME_LENGTH; i++)
+            //    frameBytes[i] = 0;
 
-            int[] rs_codeword_1 = new int[255];
+            //int[] rs_codeword_1 = new int[255];
 
-            for (int i = 0; i < 225 - 24; i++)
-                rs_codeword_1[i] = frameBytes[Constants.POS_FRAME_TYPE + (2 * i)];
+            //for (int i = 0; i < 225 - 24; i++)
+            //    rs_codeword_1[i] = frameBytes[Constants.POS_FRAME_TYPE + (2 * i)];
 
-            for (int i = 0; i < 24; i++)
-                rs_codeword_1[231 + i] = frameBytes[Constants.POS_ECC + i];
+            //for (int i = 0; i < 24; i++)
+            //    rs_codeword_1[231 + i] = frameBytes[Constants.POS_ECC + i];
 
 
-            int[] rs_codeword_2 = new int[255];
+            //int[] rs_codeword_2 = new int[255];
 
-            for (int i = 0; i < 225 - 24; i++)
-                rs_codeword_2[i] = frameBytes[Constants.POS_FRAME_TYPE + (2 * i) + 1];
+            //for (int i = 0; i < 225 - 24; i++)
+            //    rs_codeword_2[i] = frameBytes[Constants.POS_FRAME_TYPE + (2 * i) + 1];
 
-            for (int i = 0; i < 24; i++)
-                rs_codeword_2[231 + i] = frameBytes[Constants.POS_ECC + 24 + i];
+            //for (int i = 0; i < 24; i++)
+            //    rs_codeword_2[231 + i] = frameBytes[Constants.POS_ECC + 24 + i];
 
 
             //foreach (byte b in rs_codeword_1)
@@ -92,8 +92,8 @@ namespace RSDecoder.RS41
             //Console.WriteLine();
 
 
-            GenericGF field = new GenericGF(285, 256, 2);
-            ReedSolomonDecoder rsd = new ReedSolomonDecoder(field);
+            //GenericGF field = new GenericGF(285, 256, 0, 2);
+            //ReedSolomonDecoder rsd = new ReedSolomonDecoder(field);
 
             //Console.WriteLine(rsd.Decode(rs_codeword_1, 24));
             //Console.WriteLine(rsd.Decode(rs_codeword_2, 24));
@@ -110,7 +110,10 @@ namespace RSDecoder.RS41
                 return false;
 
             // Combine the two CRC-16 value bytes into a single integer
-            int crc = BitConverter.ToUInt16(new byte[] { frameBytes[blockStartPos + 2 + crcDataLength], frameBytes[blockStartPos + 2 + crcDataLength + 1] });
+            int crc = BitConverter.ToUInt16(new byte[] {
+                frameBytes[blockStartPos + 2 + crcDataLength],
+                frameBytes[blockStartPos + 2 + crcDataLength + 1]
+            });
 
             return Crc16(blockStartPos + 2, crcDataLength) == crc;
         }

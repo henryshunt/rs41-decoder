@@ -12,7 +12,6 @@ namespace RSDecoder.RS41
 
         public int FrameNumber { get; set; }
         public bool IsExtendedFrame { get; set; }
-        public int SubframeNumber { get; set; }
         public string SerialNumber { get; set; }
 
         public DateTime FrameTime { get; set; }

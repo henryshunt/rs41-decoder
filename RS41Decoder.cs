@@ -5,16 +5,15 @@ namespace RSDecoder.RS41
 {
     public class RS41Decoder
     {
-        private RS41Demodulator demodulator;
+        private readonly RS41Demodulator demodulator;
 
         private readonly bool[] headerBuffer = new bool[Constants.FRAME_HEADER.Length];
         private int headerBufferPos = 0;
 
+        private readonly SubframeDecoder subframeDecoder = new SubframeDecoder();
+
         public RS41Decoder(RS41Demodulator demodulator)
         {
-            if (demodulator == null)
-                throw new ArgumentNullException(nameof(demodulator));
-
             this.demodulator = demodulator;
         }
 
@@ -51,9 +50,15 @@ namespace RSDecoder.RS41
                                 frameBitsPos = Constants.FRAME_HEADER.Length;
                                 hasFoundHeader = false;
 
-                                FrameDecoder frame = new FrameDecoder(frameBits);
-                                frame.Decode();
-                                frame.PrintFrameTable();
+                                FrameDecoder frameDecoder = new FrameDecoder(frameBits);
+                                frameDecoder.Decode();
+                                //frameDecoder.PrintFrameTable();
+
+                                if (subframeDecoder.AddSubframePart(
+                                    frameDecoder.SubframeNumber, frameDecoder.SubframeBytes))
+                                {
+                                    subframeDecoder.Print();
+                                }
                             }
                         }
                     }

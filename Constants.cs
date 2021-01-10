@@ -39,6 +39,9 @@
         public static int POS_SERIAL_NUMBER = 0x03D; // 8 bytes
         public static int POS_BATTERY_VOLTAGE = 0x045; // 1 byte
         public static int POS_SUBFRAME_NUMBER = 0x052; // 1 byte
+        public static int POS_SUBFRAME_BYTES = 0x053; // 16 bytes
+        public static int SUBFRAME_LAST_NUMBER = 50;
+        public static int SUBFRAME_LENGTH = 816;
 
         // Measurement block
         public static int POS_MEASUREMENT_BLOCK = 0x065;
@@ -81,5 +84,11 @@
         public static int POS_GPS_SATELLITE_COUNT = 0x126; // 1 byte
         public static int POS_VELOCITY_ACCURACY = 0x127; // 1 byte
         public static int POS_POSITION_ACCURACY = 0x128; // 1 byte
+
+
+        public static int POS_SUB_TYPE = 0x218; // 8 bytes
+        public static int POS_SUB_BK_STATUS = 0x02B; // 1 byte
+        public static int POS_SUB_FREQUENCY_LOWER = 0x002; // 1 byte
+        public static int POS_SUB_FREQUENCY_UPPER = 0x003; // 1 byte
     }
 }

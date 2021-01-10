@@ -3,12 +3,15 @@ using System.ComponentModel;
 
 namespace RSDecoder.RS41
 {
-    public class FrameDecoder
+    internal class FrameDecoder
     {
         private readonly bool[] frameBits;
         private readonly byte[] frameBytes = new byte[Constants.FRAME_LENGTH];
 
         private readonly Frame decodedFrame = new Frame();
+
+        public int SubframeNumber { get; private set; }
+        public byte[] SubframeBytes { get; private set; }
 
         public FrameDecoder(bool[] frameBits)
         {
@@ -28,16 +31,21 @@ namespace RSDecoder.RS41
 
         public Frame Decode()
         {
-            DecodeBytes();
+            FrameBitsToBytes();
             DecodeXor();
 
             new FrameErrorCorrection(frameBytes, decodedFrame).Correct();
 
-            DecodeFrameType();
+            if (frameBytes[Constants.POS_FRAME_TYPE] == 0x0F)
+                decodedFrame.IsExtendedFrame = false;
+            else if (frameBytes[Constants.POS_FRAME_TYPE] == 0xF0)
+                decodedFrame.IsExtendedFrame = true;
+
             DecodeFrameNumber();
             DecodeSerialNumber();
-            DecodeBatteryVoltage();
-            DecodeSubframeNumber();
+            decodedFrame.BatteryVoltage = frameBytes[Constants.POS_BATTERY_VOLTAGE] / (double)10;
+            SubframeNumber = frameBytes[Constants.POS_SUBFRAME_NUMBER];
+            DecodeSubframeBytes();
 
             DecodeFrameTime(DecodeGpsWeek(), DecodeGpsSecondsIntoWeek());
 
@@ -55,7 +63,7 @@ namespace RSDecoder.RS41
             return decodedFrame;
         }
 
-        private void DecodeBytes()
+        private void FrameBitsToBytes()
         {
             for (int i = 0; i < Constants.FRAME_LENGTH; i++)
             {
@@ -93,13 +101,6 @@ namespace RSDecoder.RS41
         }
 
 
-        private void DecodeFrameType()
-        {
-            if (Constants.POS_FRAME_TYPE == 0xF0)
-                decodedFrame.IsExtendedFrame = true;
-            else decodedFrame.IsExtendedFrame = false;
-        }
-
         private void DecodeFrameNumber()
         {
             byte[] bytes = new byte[2];
@@ -120,14 +121,14 @@ namespace RSDecoder.RS41
             decodedFrame.SerialNumber = new string(bytes);
         }
 
-        private void DecodeBatteryVoltage()
+        private void DecodeSubframeBytes()
         {
-            decodedFrame.BatteryVoltage = frameBytes[Constants.POS_BATTERY_VOLTAGE] / (double)10;
-        }
+            byte[] bytes = new byte[16];
 
-        private void DecodeSubframeNumber()
-        {
-            decodedFrame.SubframeNumber = frameBytes[Constants.POS_SUBFRAME_NUMBER];
+            for (int i = 0; i < 16; i++)
+                bytes[i] = frameBytes[Constants.POS_SUBFRAME_BYTES + i];
+
+            SubframeBytes = bytes;
         }
 
         private void DecodeFrameTime(int week, int secondsIntoWeek)
@@ -222,9 +223,10 @@ namespace RSDecoder.RS41
         }
 
 
+
         private const double EARTH_A = 6378137;
         private const double EARTH_B = 6356752.31424518;
-        private const double EARTH_A2_B2 = (EARTH_A * EARTH_A - EARTH_B * EARTH_B);
+        private const double EARTH_A2_B2 = EARTH_A * EARTH_A - EARTH_B * EARTH_B;
 
         private const double e2 = EARTH_A2_B2 / (EARTH_A * EARTH_A);
         private const double ee2 = EARTH_A2_B2 / (EARTH_B * EARTH_B);
