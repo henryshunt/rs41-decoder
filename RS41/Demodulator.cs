@@ -4,7 +4,7 @@ using System.Text;
 
 namespace RSDecoder.RS41
 {
-    public class RS41Demodulator
+    public class Demodulator
     {
         public int NumberOfChannels { get; private set; }
         public int SampleRate { get; private set; }
@@ -20,7 +20,7 @@ namespace RSDecoder.RS41
         private int currentSampleSign = 1;
         private int previousSampleSign = 1;
 
-        public RS41Demodulator(string filePath)
+        public Demodulator(string filePath)
         {
             if (filePath == null)
                 throw new ArgumentNullException(nameof(filePath));

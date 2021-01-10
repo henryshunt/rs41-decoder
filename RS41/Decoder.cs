@@ -3,16 +3,16 @@ using System.IO;
 
 namespace RSDecoder.RS41
 {
-    public class RS41Decoder
+    public class Decoder
     {
-        private readonly RS41Demodulator demodulator;
+        private readonly Demodulator demodulator;
 
         private readonly bool[] headerBuffer = new bool[Constants.FRAME_HEADER.Length];
         private int headerBufferPos = 0;
 
         private readonly SubframeDecoder subframeDecoder = new SubframeDecoder();
 
-        public RS41Decoder(RS41Demodulator demodulator)
+        public Decoder(Demodulator demodulator)
         {
             this.demodulator = demodulator;
         }
