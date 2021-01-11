@@ -60,6 +60,7 @@ namespace RSDecoder.RS41
                     frameBytes[i] = 0;
             }
 
+            PrintFrameTable();
             return decodedFrame;
         }
 

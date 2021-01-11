@@ -5,10 +5,24 @@
         public const int BAUD_RATE = 4800;
         public const int WAV_CHANNEL = 0;
 
+        /// <summary>
+        /// The length, in bytes, of a standard RS41 data frame.
+        /// </summary>
         public static int STANDARD_FRAME_LENGTH = 320;
+
+        /// <summary>
+        /// The length, in bytes, of the extended part of an extended RS41 data frame.
+        /// </summary>
         public static int EXTENDED_DATA_LENGTH = 198;
+
+        /// <summary>
+        /// The length, in bytes, of an RS41 data frame.
+        /// </summary>
         public static int FRAME_LENGTH = STANDARD_FRAME_LENGTH + EXTENDED_DATA_LENGTH;
 
+        /// <summary>
+        /// The header, in bits, of an RS41 data frame.
+        /// </summary>
         public static bool[] FRAME_HEADER = {
             false, false, false, false, true, false, false, false, // 00001000
             false, true, true, false, true, true, false, true, // 01101101

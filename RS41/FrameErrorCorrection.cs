@@ -55,11 +55,11 @@ namespace RSDecoder.RS41
 
         public void Correct()
         {
-            decodedFrame.IsStatusBlockValid = CheckBlockValidity(Constants.POS_STATUS_BLOCK, Constants.STATUS_BLOCK_HEADER);
-            decodedFrame.IsMeasurementBlockValid = CheckBlockValidity(Constants.POS_MEASUREMENT_BLOCK, Constants.MEASUREMENT_BLOCK_HEADER);
-            decodedFrame.IsGpsInfoBlockValid = CheckBlockValidity(Constants.POS_GPS_INFO_BLOCK, Constants.GPS_INFO_BLOCK_HEADER);
-            decodedFrame.IsGpsRawBlockValid = CheckBlockValidity(Constants.POS_GPS_RAW_BLOCK, Constants.GPS_RAW_BLOCK_HEADER);
-            decodedFrame.IsGpsPositionBlockValid = CheckBlockValidity(Constants.POS_GPS_POSITION_BLOCK, Constants.GPS_POSITION_BLOCK_HEADER);
+            //decodedFrame.IsStatusBlockValid = CheckBlockValidity(Constants.POS_STATUS_BLOCK, Constants.STATUS_BLOCK_HEADER);
+            //decodedFrame.IsMeasurementBlockValid = CheckBlockValidity(Constants.POS_MEASUREMENT_BLOCK, Constants.MEASUREMENT_BLOCK_HEADER);
+            //decodedFrame.IsGpsInfoBlockValid = CheckBlockValidity(Constants.POS_GPS_INFO_BLOCK, Constants.GPS_INFO_BLOCK_HEADER);
+            //decodedFrame.IsGpsRawBlockValid = CheckBlockValidity(Constants.POS_GPS_RAW_BLOCK, Constants.GPS_RAW_BLOCK_HEADER);
+            //decodedFrame.IsGpsPositionBlockValid = CheckBlockValidity(Constants.POS_GPS_POSITION_BLOCK, Constants.GPS_POSITION_BLOCK_HEADER);
 
             //for (int i = Constants.STANDARD_FRAME_LENGTH; i < Constants.FRAME_LENGTH; i++)
             //    frameBytes[i] = 0;

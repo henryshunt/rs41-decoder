@@ -4,36 +4,27 @@ using System.Text;
 
 namespace RSDecoder.RS41
 {
-    public class Demodulator
+    public class WavFileDemodulator
     {
         public int NumberOfChannels { get; private set; }
         public int SampleRate { get; private set; }
         public int BitsPerSample { get; private set; }
         public double SamplesPerBit { get; private set; }
 
-        private string filePath;
-        private FileStream fileStream;
-        private BinaryReader reader;
+        private readonly string wavPath;
+        private FileStream? fileStream = null;
+        private BinaryReader? reader = null;
 
         private bool hasReadWavHeader = false;
 
         private int currentSampleSign = 1;
         private int previousSampleSign = 1;
 
-        public Demodulator(string filePath)
+        public WavFileDemodulator(string wavPath)
         {
-            if (filePath == null)
-                throw new ArgumentNullException(nameof(filePath));
-
-            this.filePath = filePath;
+            this.wavPath = wavPath;
         }
 
-
-        private void OpenStream()
-        {
-            fileStream = File.OpenRead(filePath);
-            reader = new BinaryReader(fileStream);
-        }
 
         private bool ReadWavHeader()
         {
@@ -135,7 +126,9 @@ namespace RSDecoder.RS41
             {
                 hasReadWavHeader = true;
 
-                OpenStream();
+                fileStream = File.OpenRead(wavPath);
+                reader = new BinaryReader(fileStream);
+
                 ReadWavHeader();
 
                 if (BitsPerSample != 8 && BitsPerSample != 16)
@@ -187,7 +180,7 @@ namespace RSDecoder.RS41
             bool[] bits = new bool[bitCount2];
 
             for (int i = 0; i < bitCount2; i++)
-                bits[i] = previousSampleSign == -1 ? false : true;
+                bits[i] = previousSampleSign != -1;
 
             return bits;
         }

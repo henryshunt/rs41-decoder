@@ -1,30 +1,54 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace RSDecoder.RS41
 {
-    public class Decoder
+    /// <summary>
+    /// Represents a decoder for a static WAV file.
+    /// </summary>
+    public class WavFileDecoder
     {
-        private readonly Demodulator demodulator;
+        /// <summary>
+        /// The demodulator.
+        /// </summary>
+        private readonly WavFileDemodulator demodulator;
 
+        /// <summary>
+        /// A circular buffer for detecting the frame header.
+        /// </summary>
         private readonly bool[] headerBuffer = new bool[Constants.FRAME_HEADER.Length];
+
+        /// <summary>
+        /// The index within <see cref="headerBuffer"/> at which to place the next bit.
+        /// </summary>
         private int headerBufferPos = 0;
 
+        /// <summary>
+        /// For decoding subframes.
+        /// </summary>
         private readonly SubframeDecoder subframeDecoder = new SubframeDecoder();
 
-        public Decoder(Demodulator demodulator)
+        /// <summary>
+        /// Initialises a new instance of the <see cref="WavFileDecoder"/> class.
+        /// </summary>
+        /// <param name="wavPath">The path to the WAV file to decode.</param>
+        public WavFileDecoder(string wavPath)
         {
-            this.demodulator = demodulator;
+            demodulator = new WavFileDemodulator(wavPath);
         }
 
-
-        public void Decode()
+        /// <summary>
+        /// Decodes the radiosonde data in the WAV file.
+        /// </summary>
+        /// <returns>A list of the frames decoded from the WAV file.</returns>
+        public List<Frame> Decode()
         {
+            List<Frame> frames = new List<Frame>();
             bool hasFoundHeader = false;
 
             bool[] frameBits = new bool[Constants.FRAME_LENGTH * 8];
             Array.Copy(Constants.FRAME_HEADER, frameBits, Constants.FRAME_HEADER.Length);
-
             int frameBitsPos = Constants.FRAME_HEADER.Length;
 
             while (true)
@@ -47,34 +71,36 @@ namespace RSDecoder.RS41
 
                             if (frameBitsPos == frameBits.Length)
                             {
-                                frameBitsPos = Constants.FRAME_HEADER.Length;
-                                hasFoundHeader = false;
-
                                 FrameDecoder frameDecoder = new FrameDecoder(frameBits);
-                                frameDecoder.Decode();
-                                //frameDecoder.PrintFrameTable();
+                                Frame frame = frameDecoder.Decode();
 
                                 if (subframeDecoder.AddSubframePart(
                                     frameDecoder.SubframeNumber, frameDecoder.SubframeBytes))
                                 {
-                                    subframeDecoder.Print();
+                                    frame.Subframe = subframeDecoder.Subframe;
                                 }
+
+                                frames.Add(frame);
+
+                                frameBitsPos = Constants.FRAME_HEADER.Length;
+                                hasFoundHeader = false;
                             }
                         }
                     }
                 }
                 catch (EndOfStreamException)
                 {
-                    return;
+                    return frames;
                 }
             }
         }
 
         /// <summary>
-        /// Determines whether the circular buffer <see cref="headerBuffer"/> contains the frame header
-        /// bits with the final bit being at index <see cref="headerBufferPos"/> - 1.
+        /// Determines whether <see cref="headerBuffer"/> contains (in a circular fashion) all bits of the frame header.
+        /// Index <see cref="headerBufferPos"/> - 1 is treated as the final bit in the circle.
         /// </summary>
-        /// <returns>true if the header buffer contains the frame header, otherwise false.</returns>
+        /// <returns><see langword="true"/> if <see cref="headerBuffer"/> contains the frame header, otherwise
+        /// <see langword="false"/>.</returns>
         private bool CheckForFrameHeader()
         {
             int i = 0;

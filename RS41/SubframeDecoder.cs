@@ -6,12 +6,12 @@ namespace RSDecoder.RS41
 {
     internal class SubframeDecoder
     {
-        List<byte[]> subframeParts = new List<byte[]>();
+        private readonly List<byte[]> subframeParts = new List<byte[]>();
         private int lastSubframeNumber = -1;
 
         private readonly byte[] subframeBytes = new byte[Constants.SUBFRAME_LENGTH];
 
-        public Subframe decodedSubframe { get; private set; } = null;
+        public Subframe? Subframe { get; private set; } = null;
 
 
         public bool AddSubframePart(int subframeNumber, byte[] subframeBytes)
@@ -47,17 +47,12 @@ namespace RSDecoder.RS41
                     subframeBytes[i++] = b;
             }
 
-            decodedSubframe = new Subframe();
-
-            //foreach (byte b in bytes)
-            //    Console.Write("{0:X2} ", b);
-            //Console.WriteLine();
-            //Console.WriteLine();
+            Subframe = new Subframe();
 
             if (subframeBytes[Constants.POS_SUB_BK_STATUS] == 0x0)
-                decodedSubframe.IsBurstKillEnabled = false;
+                Subframe.IsBurstKillEnabled = false;
             else if (subframeBytes[Constants.POS_SUB_BK_STATUS] == 0x1)
-                decodedSubframe.IsBurstKillEnabled = true;
+                Subframe.IsBurstKillEnabled = true;
 
             DecodeDeviceType();
             DecodeFrequency();
@@ -70,7 +65,7 @@ namespace RSDecoder.RS41
             for (int i = 0; i < 8; i++)
                 bytes[i] = (char)subframeBytes[Constants.POS_SUB_TYPE + i];
 
-            decodedSubframe.DeviceType = new string(bytes);
+            Subframe.DeviceType = new string(bytes);
         }
 
         private void DecodeFrequency()
@@ -81,15 +76,15 @@ namespace RSDecoder.RS41
             b = subframeBytes[Constants.POS_SUB_FREQUENCY_UPPER];
             double f1 = 40 * b;
 
-            decodedSubframe.Frequency = (400000 + f1 + f0) / 1000;
+            Subframe.Frequency = (400000 + f1 + f0) / 1000;
         }
 
         public void Print()
         {
             Console.WriteLine("\n\n");
 
-            foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(decodedSubframe))
-                Console.WriteLine("{0} = {1}", descriptor.Name, descriptor.GetValue(decodedSubframe));
+            foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(Subframe))
+                Console.WriteLine("{0} = {1}", descriptor.Name, descriptor.GetValue(Subframe));
         }
     }
 }
