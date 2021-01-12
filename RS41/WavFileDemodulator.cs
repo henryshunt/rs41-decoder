@@ -141,14 +141,14 @@ namespace RSDecoder.RS41
             {
                 byte buffer = reader.ReadByte();
 
-                if (channel == Constants.WAV_CHANNEL)
+                if (channel == 0)
                     sample = buffer;
 
                 if (BitsPerSample == 16)
                 {
                     buffer = reader.ReadByte();
 
-                    if (channel == Constants.WAV_CHANNEL)
+                    if (channel == 0)
                         sample += (short)(buffer << 8);
                 }
             }

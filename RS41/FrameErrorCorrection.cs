@@ -10,6 +10,12 @@ namespace RSDecoder.RS41
         private byte[] frameBytes;
         private Frame decodedFrame;
 
+        public bool IsStatusBlockValid { get; set; } = false;
+        public bool IsMeasurementBlockValid { get; set; } = false;
+        public bool IsGpsInfoBlockValid { get; set; } = false;
+        public bool IsGpsRawBlockValid { get; set; } = false;
+        public bool IsGpsPositionBlockValid { get; set; } = false;
+
         public FrameErrorCorrection(byte[] frameBytes, Frame decodedFrame)
         {
             this.frameBytes = frameBytes;
@@ -55,11 +61,11 @@ namespace RSDecoder.RS41
 
         public void Correct()
         {
-            //decodedFrame.IsStatusBlockValid = CheckBlockValidity(Constants.POS_STATUS_BLOCK, Constants.STATUS_BLOCK_HEADER);
-            //decodedFrame.IsMeasurementBlockValid = CheckBlockValidity(Constants.POS_MEASUREMENT_BLOCK, Constants.MEASUREMENT_BLOCK_HEADER);
-            //decodedFrame.IsGpsInfoBlockValid = CheckBlockValidity(Constants.POS_GPS_INFO_BLOCK, Constants.GPS_INFO_BLOCK_HEADER);
-            //decodedFrame.IsGpsRawBlockValid = CheckBlockValidity(Constants.POS_GPS_RAW_BLOCK, Constants.GPS_RAW_BLOCK_HEADER);
-            //decodedFrame.IsGpsPositionBlockValid = CheckBlockValidity(Constants.POS_GPS_POSITION_BLOCK, Constants.GPS_POSITION_BLOCK_HEADER);
+            IsStatusBlockValid = CheckBlockValidity(Constants.POS_BLK_STATUS, Constants.BLK_STATUS_HEADER);
+            IsMeasurementBlockValid = CheckBlockValidity(Constants.POS_BLK_MEASUREMENT, Constants.BLK_MEASUREMENT_HEADER);
+            IsGpsInfoBlockValid = CheckBlockValidity(Constants.POS_BLK_GPS_INFO, Constants.BLK_GPS_INFO_HEADER);
+            IsGpsRawBlockValid = CheckBlockValidity(Constants.POS_BLK_GPS_RAW, Constants.BLK_GPS_RAW_HEADER);
+            IsGpsPositionBlockValid = CheckBlockValidity(Constants.POS_BLK_GPS_POSITION, Constants.BLK_GPS_POSITION_HEADER);
 
             //for (int i = Constants.STANDARD_FRAME_LENGTH; i < Constants.FRAME_LENGTH; i++)
             //    frameBytes[i] = 0;

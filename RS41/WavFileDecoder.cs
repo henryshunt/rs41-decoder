@@ -28,11 +28,11 @@ namespace RSDecoder.RS41
         /// For decoding subframes.
         /// </summary>
         private readonly SubframeDecoder subframeDecoder = new SubframeDecoder();
-
+    
         /// <summary>
         /// Initialises a new instance of the <see cref="WavFileDecoder"/> class.
         /// </summary>
-        /// <param name="wavPath">The path to the WAV file to decode.</param>
+        /// <param name="wavPath">The WAV file to decode.</param>
         public WavFileDecoder(string wavPath)
         {
             demodulator = new WavFileDemodulator(wavPath);
@@ -71,16 +71,7 @@ namespace RSDecoder.RS41
 
                             if (frameBitsPos == frameBits.Length)
                             {
-                                FrameDecoder frameDecoder = new FrameDecoder(frameBits);
-                                Frame frame = frameDecoder.Decode();
-
-                                if (subframeDecoder.AddSubframePart(
-                                    frameDecoder.SubframeNumber, frameDecoder.SubframeBytes))
-                                {
-                                    frame.Subframe = subframeDecoder.Subframe;
-                                }
-
-                                frames.Add(frame);
+                                frames.Add(new FrameDecoder(frameBits, subframeDecoder).Decode());
 
                                 frameBitsPos = Constants.FRAME_HEADER.Length;
                                 hasFoundHeader = false;

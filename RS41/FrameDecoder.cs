@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 
 namespace RSDecoder.RS41
 {
@@ -8,16 +7,13 @@ namespace RSDecoder.RS41
         private readonly bool[] frameBits;
         private readonly byte[] frameBytes = new byte[Constants.FRAME_LENGTH];
 
-        private readonly Frame decodedFrame = new Frame();
+        public readonly Frame Frame = new Frame();
 
-        public int SubframeNumber { get; private set; }
-        public byte[] SubframeBytes { get; private set; }
+        private readonly SubframeDecoder subframeDecoder;
+        private FrameErrorCorrection? ec = null;
 
-        public FrameDecoder(bool[] frameBits)
+        public FrameDecoder(bool[] frameBits, SubframeDecoder subframeDecoder)
         {
-            if (frameBits == null)
-                throw new ArgumentNullException(nameof(frameBits));
-
             if (frameBits.Length != Constants.FRAME_LENGTH * 8)
             {
                 throw new ArgumentException(string.Format(
@@ -26,42 +22,53 @@ namespace RSDecoder.RS41
             }
 
             this.frameBits = frameBits;
+            this.subframeDecoder = subframeDecoder;
         }
 
 
         public Frame Decode()
         {
             FrameBitsToBytes();
-            DecodeXor();
+            UnmaskFrameBytes();
 
-            new FrameErrorCorrection(frameBytes, decodedFrame).Correct();
+            ec = new FrameErrorCorrection(frameBytes, Frame);
+            ec.Correct();
 
-            if (frameBytes[Constants.POS_FRAME_TYPE] == 0x0F)
-                decodedFrame.IsExtendedFrame = false;
-            else if (frameBytes[Constants.POS_FRAME_TYPE] == 0xF0)
-                decodedFrame.IsExtendedFrame = true;
+            Frame.IsExtendedFrame = frameBytes[Constants.POS_FRAME_TYPE] == 0xF0;
 
             DecodeFrameNumber();
             DecodeSerialNumber();
-            decodedFrame.BatteryVoltage = frameBytes[Constants.POS_BATTERY_VOLTAGE] / (double)10;
-            SubframeNumber = frameBytes[Constants.POS_SUBFRAME_NUMBER];
-            DecodeSubframeBytes();
+            DecodeBatteryVoltage();
 
-            DecodeFrameTime(DecodeGpsWeek(), DecodeGpsSecondsIntoWeek());
+            if (ec.IsStatusBlockValid)
+            {
+                int subframeNumber = frameBytes[Constants.POS_SUBFRAME_NUMBER];
 
-            DecodePosition();
+                byte[] subframeBytes = new byte[16];
+                for (int i = 0; i < 16; i++)
+                    subframeBytes[i] = frameBytes[Constants.POS_SUBFRAME_BYTES + i];
+
+                if (subframeDecoder.AddSubframePart(subframeNumber, subframeBytes))
+                    Frame.Subframe = subframeDecoder.Subframe;
+            }
+
+            DecodeTime();
+            DecodePosAndVel();
             DecodeGpsSatelliteCount();
             DecodeGpsVelocityAccuracy();
             DecodeGpsPositionAccuracy();
+            DecodeThermoTemp();
+            DecodeThermoHumi();
+            DecodeHumidity();
 
-            if (!decodedFrame.IsExtendedFrame)
-            {
-                for (int i = Constants.STANDARD_FRAME_LENGTH - 1; i < Constants.FRAME_LENGTH; i++)
-                    frameBytes[i] = 0;
-            }
+            //if (!Frame.IsExtendedFrame)
+            //{
+            //    for (int i = Constants.STANDARD_FRAME_LENGTH - 1; i < Constants.FRAME_LENGTH; i++)
+            //        frameBytes[i] = 0;
+            //}
 
-            PrintFrameTable();
-            return decodedFrame;
+            Console.WriteLine(Frame);
+            return Frame;
         }
 
         private void FrameBitsToBytes()
@@ -75,12 +82,6 @@ namespace RSDecoder.RS41
 
                 frameBytes[i] = BoolArrayToByte(byteBits);
             }
-        }
-
-        private void DecodeXor()
-        {
-            for (int i = 0; i < Constants.FRAME_LENGTH; i++)
-                frameBytes[i] = (byte)(frameBytes[i] ^ Constants.FRAME_MASK[i % Constants.FRAME_MASK.Length]);
         }
 
         private byte BoolArrayToByte(bool[] bits)
@@ -101,82 +102,89 @@ namespace RSDecoder.RS41
             return value;
         }
 
+        private void UnmaskFrameBytes()
+        {
+            for (int i = 0; i < Constants.FRAME_LENGTH; i++)
+                frameBytes[i] = (byte)(frameBytes[i] ^ Constants.FRAME_MASK[i % Constants.FRAME_MASK.Length]);
+        }
+
 
         private void DecodeFrameNumber()
         {
+            if (!ec!.IsStatusBlockValid)
+                return;
+
             byte[] bytes = new byte[2];
 
             for (int i = 0; i < 2; i++)
                 bytes[i] = frameBytes[Constants.POS_FRAME_NUMBER + i];
 
-            decodedFrame.FrameNumber = BitConverter.ToInt16(bytes);
+            Frame.Number = BitConverter.ToInt16(bytes);
         }
 
         private void DecodeSerialNumber()
         {
+            if (!ec!.IsStatusBlockValid)
+                return;
+
             char[] bytes = new char[8];
 
             for (int i = 0; i < 8; i++)
                 bytes[i] = (char)frameBytes[Constants.POS_SERIAL_NUMBER + i];
 
-            decodedFrame.SerialNumber = new string(bytes);
+            Frame.SerialNumber = new string(bytes);
         }
 
-        private void DecodeSubframeBytes()
+        private void DecodeBatteryVoltage()
         {
-            byte[] bytes = new byte[16];
+            if (!ec!.IsStatusBlockValid)
+                return;
 
-            for (int i = 0; i < 16; i++)
-                bytes[i] = frameBytes[Constants.POS_SUBFRAME_BYTES + i];
-
-            SubframeBytes = bytes;
+            Frame.BatteryVoltage = frameBytes[Constants.POS_BATTERY_VOLTAGE] / (double)10;
         }
 
-        private void DecodeFrameTime(int week, int secondsIntoWeek)
+        private void DecodeTime()
         {
-            DateTime gpsTimeOrigin = new DateTime(1980, 1, 6);
-            gpsTimeOrigin = gpsTimeOrigin.AddDays(week * 7);
-            gpsTimeOrigin = gpsTimeOrigin.AddSeconds(secondsIntoWeek);
+            if (!ec!.IsStatusBlockValid || !ec!.IsGpsInfoBlockValid)
+                return;
 
-            decodedFrame.FrameTime = gpsTimeOrigin;
-        }
-
-        private int DecodeGpsWeek()
-        {
             byte[] bytes = new byte[2];
-
             for (int i = 0; i < 2; i++)
                 bytes[i] = frameBytes[Constants.POS_GPS_WEEK + i];
+            int week = BitConverter.ToInt16(bytes);
 
-            return BitConverter.ToInt16(bytes);
-        }
-
-        private int DecodeGpsSecondsIntoWeek()
-        {
-            byte[] bytes = new byte[4];
-
+            bytes = new byte[4];
             for (int i = 0; i < 4; i++)
                 bytes[i] = frameBytes[Constants.POS_GPS_TIME_OF_WEEK + i];
+            int secondsOfWeek = BitConverter.ToInt32(bytes) / 1000;
 
-            return BitConverter.ToInt32(bytes) / 1000;
+            DateTime time = new DateTime(1980, 1, 6);
+            time = time.AddDays(week * 7);
+            time = time.AddSeconds(secondsOfWeek);
+            Frame.Time = time;
         }
 
-        private void DecodePosition()
+        private void DecodePosAndVel()
         {
-            (double, double, double) ecefPositions = DecodeEcefPositions();
-            (double, double, double) positions = EcefToLlh(ecefPositions.Item1, ecefPositions.Item2, ecefPositions.Item3);
+            if (!ec!.IsGpsPositionBlockValid)
+                return;
 
-            decodedFrame.Latitude = positions.Item1;
-            decodedFrame.Longitude = positions.Item2;
-            decodedFrame.Elevation = positions.Item3;
+            (double, double, double) ecefPositions = DecodeEcefPositions();
+            (double, double, double) positions = Utilities.EcefToLlh(
+                ecefPositions.Item1, ecefPositions.Item2, ecefPositions.Item3);
+
+            Frame.Latitude = positions.Item1;
+            Frame.Longitude = positions.Item2;
+            Frame.Elevation = positions.Item3;
 
             (double, double, double) ecefVelocities = DecodeEcefVelocities();
-            (double, double, double) velocities = EcefToHdv(decodedFrame.Latitude,
-                decodedFrame.Longitude, ecefVelocities.Item1, ecefVelocities.Item2, ecefVelocities.Item3);
+            (double, double, double) velocities = Utilities.EcefToHdv(
+                (double)Frame.Latitude, (double)Frame.Longitude,
+                ecefVelocities.Item1, ecefVelocities.Item2, ecefVelocities.Item3);
 
-            decodedFrame.HorizontalVelocity = velocities.Item1;
-            decodedFrame.Direction = velocities.Item2;
-            decodedFrame.VerticalVelocity = velocities.Item3;
+            Frame.HorizontalVelocity = velocities.Item1;
+            Frame.Direction = velocities.Item2;
+            Frame.VerticalVelocity = velocities.Item3;
         }
 
         private (double, double, double) DecodeEcefPositions()
@@ -223,135 +231,140 @@ namespace RSDecoder.RS41
             return (x / (double)100, y / (double)100, z / (double)100);
         }
 
-
-
-        private const double EARTH_A = 6378137;
-        private const double EARTH_B = 6356752.31424518;
-        private const double EARTH_A2_B2 = EARTH_A * EARTH_A - EARTH_B * EARTH_B;
-
-        private const double e2 = EARTH_A2_B2 / (EARTH_A * EARTH_A);
-        private const double ee2 = EARTH_A2_B2 / (EARTH_B * EARTH_B);
-
-        private (double, double, double) EcefToLlh(double x, double y, double z)
-        {
-            double lam = Math.Atan2(y, x);
-            double p = Math.Sqrt(x * x + y * y);
-            double t = Math.Atan2(z * EARTH_A, p * EARTH_B);
-
-            double phi = Math.Atan2(z + ee2 * EARTH_B * Math.Sin(t) * Math.Sin(t) * Math.Sin(t),
-                p - e2 * EARTH_A * Math.Cos(t) * Math.Cos(t) * Math.Cos(t));
-
-            double R = EARTH_A / Math.Sqrt(1 - e2 * Math.Sin(phi) * Math.Sin(phi));
-
-            double latitude = phi * 180 / Math.PI;
-            double longitude = lam * 180 / Math.PI;
-            double elevation = p / Math.Cos(phi) - R;
-
-            return (latitude, longitude, elevation);
-        }
-
-        private (double, double, double) EcefToHdv(double latitude, double longitude, double x, double y, double z)
-        {
-            // First convert from ECEF to NEU (north, east, up)
-            double phi = latitude * Math.PI / 180.0;
-            double lam = longitude * Math.PI / 180.0;
-
-            double vN = -x * Math.Sin(phi) * Math.Cos(lam) - y * Math.Sin(phi) * Math.Sin(lam) + z * Math.Cos(phi);
-            double vE = -x * Math.Sin(lam) + y * Math.Cos(lam);
-            double vU = x * Math.Cos(phi) * Math.Cos(lam) + y * Math.Cos(phi) * Math.Sin(lam) + z * Math.Sin(phi);
-
-            // Then convert from NEU to HDV (horizontal, direction, vertical)
-            double vH = Math.Sqrt(vN * vN + vE * vE);
-            double direction = Math.Atan2(vE, vN) * 180 / Math.PI;
-
-            if (direction < 0)
-                direction += 360;
-
-            return (vH, direction, vU);
-        }
-
-
         private void DecodeGpsSatelliteCount()
         {
-            decodedFrame.GpsSatelliteCount = frameBytes[Constants.POS_GPS_SATELLITE_COUNT];
+            if (!ec!.IsGpsPositionBlockValid)
+                return;
+
+            Frame.GpsSatelliteCount = frameBytes[Constants.POS_GPS_SATELLITE_COUNT];
         }
 
         private void DecodeGpsVelocityAccuracy()
         {
-            decodedFrame.VelocityAccuracy = frameBytes[Constants.POS_VELOCITY_ACCURACY] / (double)10;
+            if (!ec!.IsGpsPositionBlockValid)
+                return;
+
+            Frame.VelocityAccuracy = frameBytes[Constants.POS_VELOCITY_ACCURACY] / (double)10;
         }
 
         private void DecodeGpsPositionAccuracy()
         {
-            decodedFrame.PositionAccuracy = frameBytes[Constants.POS_POSITION_ACCURACY] / (double)10;
+            if (!ec!.IsGpsPositionBlockValid)
+                return;
+
+            Frame.PositionAccuracy = frameBytes[Constants.POS_POSITION_ACCURACY] / (double)10;
         }
 
-
-        public override string ToString()
+        private void DecodeThermoTemp()
         {
-            string value = "";
+            if (!ec!.IsMeasurementBlockValid || subframeDecoder.Subframe == null)
+                return;
 
-            foreach (byte b in frameBytes)
-                value += b.ToString("X2");
+            Subframe subframe = subframeDecoder.Subframe;
+            byte[] bytes = new byte[4];
 
-            return value;
+            for (int i = 0; i < 3; i++)
+                bytes[i] = frameBytes[Constants.POS_THERMO_TEMP_MAIN + i];
+            double main = BitConverter.ToInt32(bytes);
+
+            for (int i = 0; i < 3; i++)
+                bytes[i] = frameBytes[Constants.POS_THERMO_TEMP_REF1 + i];
+            double ref1 = BitConverter.ToInt32(bytes);
+
+            for (int i = 0; i < 3; i++)
+                bytes[i] = frameBytes[Constants.POS_THERMO_TEMP_REF2 + i];
+            double ref2 = BitConverter.ToInt32(bytes);
+
+
+            double g = (ref2 - ref1) / (subframe.ReferenceResistor2 - subframe.ReferenceResistor1),       // gain
+                Rb = (ref1 * subframe.ReferenceResistor2 - ref2 * subframe.ReferenceResistor1) / (ref2 - ref1), // ofs
+                Rc = main / g - Rb,
+                R = Rc * subframe.ThermoTempCalibration1;
+
+            double T = (subframe.ThermoTempConstant1 + subframe.ThermoTempConstant2
+                * R + subframe.ThermoTempConstant3 * R * R + subframe.ThermoTempCalibration2)
+                * (1.0 + subframe.ThermoTempCalibration3);
+
+            Frame.Temperature = T;
         }
 
-        public void PrintFrameTable()
+        private void DecodeThermoHumi()
         {
-            Console.Write("      ");
+            if (!ec!.IsMeasurementBlockValid || subframeDecoder.Subframe == null)
+                return;
 
-            for (int i = 0; i <= 0xF; i++)
-                Console.Write("{0:X1}  ", i);
+            Subframe subframe = subframeDecoder.Subframe;
+            byte[] bytes = new byte[4];
 
-            Console.WriteLine();
-            bool stop = false;
+            for (int i = 0; i < 3; i++)
+                bytes[i] = frameBytes[Constants.POS_THERMO_HUMI_MAIN + i];
+            double main = BitConverter.ToInt32(bytes);
 
-            for (int i = 0; i <= 0x20; i++)
+            for (int i = 0; i < 3; i++)
+                bytes[i] = frameBytes[Constants.POS_THERMO_HUMI_REF1 + i];
+            double ref1 = BitConverter.ToInt32(bytes);
+
+            for (int i = 0; i < 3; i++)
+                bytes[i] = frameBytes[Constants.POS_THERMO_HUMI_REF2 + i];
+            double ref2 = BitConverter.ToInt32(bytes);
+
+
+            double g = (ref2 - ref1) / (subframe.ReferenceResistor2 - subframe.ReferenceResistor1),       // gain
+                Rb = (ref1 * subframe.ReferenceResistor2 - ref2 * subframe.ReferenceResistor1) / (ref2 - ref1), // ofs
+                Rc = main / g - Rb,
+                R = Rc * subframe.ThermoHumiCalibration1;
+
+            double T = (subframe.ThermoHumiConstant1 + subframe.ThermoHumiConstant2
+                * R + subframe.ThermoHumiConstant3 * R * R + subframe.ThermoHumiCalibration2)
+                * (1.0 + subframe.ThermoHumiCalibration3);
+
+            Frame.HumidityModuleTemp = T;
+        }
+
+        private void DecodeHumidity()
+        {
+            if (!ec!.IsMeasurementBlockValid || subframeDecoder.Subframe == null ||
+                Frame.Temperature == null)
             {
-                Console.Write("0x{0:X2}0 ", i);
-
-                for (int j = 0; j <= 0xF; j++)
-                {
-                    if ((i * 16) + j == Constants.FRAME_LENGTH)
-                    {
-                        stop = true;
-                        break;
-                    }
-
-                    if ((i * 16) + j >= 0 && (i * 16) + j <= 0x7)
-                        Console.BackgroundColor = ConsoleColor.DarkYellow;
-                    else if ((i * 16) + j >= 0x8 && (i * 16) + j <= 0x37)
-                        Console.BackgroundColor = ConsoleColor.DarkBlue;
-
-                    else if ((i * 16) + j >= 0x39 && (i * 16) + j <= 0x64)
-                        Console.BackgroundColor = ConsoleColor.Red;
-                    else if ((i * 16) + j >= 0x65 && (i * 16) + j <= 0x92)
-                        Console.BackgroundColor = ConsoleColor.Magenta;
-                    else if ((i * 16) + j >= 0x93 && (i * 16) + j <= 0xB4)
-                        Console.BackgroundColor = ConsoleColor.DarkMagenta;
-                    else if ((i * 16) + j >= 0xB5 && (i * 16) + j <= 0x111)
-                        Console.BackgroundColor = ConsoleColor.Blue;
-                    else if ((i * 16) + j >= 0x112 && (i * 16) + j <= 0x12A)
-                        Console.BackgroundColor = ConsoleColor.DarkGreen;
-                    else if ((i * 16) + j >= 0x12B && (i * 16) + j <= 0x13F)
-                        Console.BackgroundColor = ConsoleColor.Green;
-
-                    Console.Write("{0:X2}", frameBytes[(i * 16) + j]);
-                    Console.ResetColor();
-                    Console.Write(" ");
-                }
-
-                Console.WriteLine();
-
-                if (stop)
-                    break;
+                return;
             }
 
-            Console.WriteLine();
+            byte[] bytes = new byte[4];
 
-            foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(decodedFrame))
-                Console.WriteLine("{0} = {1}", descriptor.Name, descriptor.GetValue(decodedFrame));
+            for (int i = 0; i < 3; i++)
+                bytes[i] = frameBytes[Constants.POS_HUMIDITY_MAIN + i];
+            double main = BitConverter.ToInt32(bytes);
+
+            for (int i = 0; i < 3; i++)
+                bytes[i] = frameBytes[Constants.POS_HUMIDITY_REF1 + i];
+            double ref1 = BitConverter.ToInt32(bytes);
+
+            for (int i = 0; i < 3; i++)
+                bytes[i] = frameBytes[Constants.POS_HUMIDITY_REF2 + i];
+            double ref2 = BitConverter.ToInt32(bytes);
+
+
+            double a0 = 7.5;           // empirical
+            double a1 = 350.0 / subframeDecoder.Subframe.HumidityCalibration; // empirical
+            double fh = (main - ref1) / (float)(ref2 - ref1);
+            double rh = 100.0 * (a1 * fh - a0);
+            double T0 = 0.0, T1 = -25.0; // T/C
+
+            rh += T0 - (double)Frame.Temperature / 5.5;                    // empir. temperature compensation
+
+            if (Frame.Temperature < T1)
+                rh *= 1.0 + (T1 - (double)Frame.Temperature) / 90.0; // empir. temperature compensation
+
+            if (rh < 0.0)
+                rh = 0.0;
+
+            if (rh > 100.0)
+                rh = 100.0;
+
+            if (Frame.Temperature < -273.0)
+                rh = -1.0;
+
+            Frame.Humidity = rh;
         }
     }
 }
