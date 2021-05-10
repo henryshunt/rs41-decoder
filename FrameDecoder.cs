@@ -7,7 +7,7 @@ namespace Rs41Decoder
         private readonly bool[] frameBits;
         private readonly byte[] frameBytes = new byte[Constants.FRAME_LENGTH];
 
-        public readonly Frame Frame = new Frame();
+        public readonly Rs41Frame Frame = new Rs41Frame();
 
         private readonly SubframeDecoder subframeDecoder;
         private FrameErrorCorrection? ec = null;
@@ -26,7 +26,7 @@ namespace Rs41Decoder
         }
 
 
-        public Frame Decode()
+        public Rs41Frame Decode()
         {
             FrameBitsToBytes();
             UnmaskFrameBytes();
@@ -260,7 +260,7 @@ namespace Rs41Decoder
             if (!ec!.IsMeasurementBlockValid || subframeDecoder.Subframe == null)
                 return;
 
-            Subframe subframe = subframeDecoder.Subframe;
+            Rs41Subframe subframe = subframeDecoder.Subframe;
             byte[] bytes = new byte[4];
 
             for (int i = 0; i < 3; i++)
@@ -293,7 +293,7 @@ namespace Rs41Decoder
             if (!ec!.IsMeasurementBlockValid || subframeDecoder.Subframe == null)
                 return;
 
-            Subframe subframe = subframeDecoder.Subframe;
+            Rs41Subframe subframe = subframeDecoder.Subframe;
             byte[] bytes = new byte[4];
 
             for (int i = 0; i < 3; i++)

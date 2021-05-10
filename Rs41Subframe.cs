@@ -2,7 +2,7 @@
 
 namespace Rs41Decoder
 {
-    public class Subframe
+    public class Rs41Subframe
     {
         public string DeviceType { get; set; }
         public bool IsBurstKillEnabled { get; set; }

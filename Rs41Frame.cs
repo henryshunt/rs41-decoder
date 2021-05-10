@@ -3,7 +3,7 @@ using System.ComponentModel;
 
 namespace Rs41Decoder
 {
-    public class Frame
+    public class Rs41Frame
     {
         public int? Number { get; set; } = null;
         public DateTime? Time { get; set; } = null;
@@ -27,7 +27,7 @@ namespace Rs41Decoder
         public double? PositionAccuracy { get; set; } = null;
         public double? VelocityAccuracy { get; set; } = null;
 
-        public Subframe? Subframe { get; set; } = null;
+        public Rs41Subframe? Subframe { get; set; } = null;
 
         public override string ToString()
         {

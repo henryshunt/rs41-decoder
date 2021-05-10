@@ -8,7 +8,7 @@ namespace Rs41Decoder
     internal class FrameErrorCorrection
     {
         private byte[] frameBytes;
-        private Frame decodedFrame;
+        private Rs41Frame decodedFrame;
 
         public bool IsStatusBlockValid { get; set; } = false;
         public bool IsMeasurementBlockValid { get; set; } = false;
@@ -16,7 +16,7 @@ namespace Rs41Decoder
         public bool IsGpsRawBlockValid { get; set; } = false;
         public bool IsGpsPositionBlockValid { get; set; } = false;
 
-        public FrameErrorCorrection(byte[] frameBytes, Frame decodedFrame)
+        public FrameErrorCorrection(byte[] frameBytes, Rs41Frame decodedFrame)
         {
             this.frameBytes = frameBytes;
             this.decodedFrame = decodedFrame;

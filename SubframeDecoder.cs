@@ -11,7 +11,7 @@ namespace Rs41Decoder
 
         private readonly byte[] subframeBytes = new byte[Constants.SUBFRAME_LENGTH];
 
-        public Subframe? Subframe { get; private set; } = null;
+        public Rs41Subframe? Subframe { get; private set; } = null;
 
 
         public bool AddSubframePart(int subframeNumber, byte[] subframeBytes)
@@ -47,7 +47,7 @@ namespace Rs41Decoder
                     subframeBytes[i++] = b;
             }
 
-            Subframe = new Subframe();
+            Subframe = new Rs41Subframe();
 
             if (subframeBytes[Constants.POS_SUB_BURST_KILL_STATUS] == 0x0)
                 Subframe.IsBurstKillEnabled = false;
