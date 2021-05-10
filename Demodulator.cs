@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace RSDecoder
+namespace Rs41Decoder
 {
     /// <summary>
     /// Represents a WAV file demodulator for the RS41 radiosonde.

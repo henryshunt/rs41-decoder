@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AssemblyName>RS41Decoder</AssemblyName>
-    <RootNamespace>RSDecoder</RootNamespace>
+    <AssemblyName>Rs41Decoder</AssemblyName>
+    <RootNamespace>Rs41Decoder</RootNamespace>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 

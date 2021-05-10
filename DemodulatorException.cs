@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RSDecoder
+namespace Rs41Decoder
 {
     /// <summary>
     /// An exception that is thrown by a <see cref="Demodulator"/>.

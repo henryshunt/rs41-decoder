@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RSDecoder
+namespace Rs41Decoder
 {
     internal class FrameDecoder
     {

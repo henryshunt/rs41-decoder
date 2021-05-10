@@ -1,4 +1,4 @@
-﻿namespace RSDecoder
+﻿namespace Rs41Decoder
 {
     public static class Constants
     {

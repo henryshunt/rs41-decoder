@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30330.147
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RS41Decoder", "RS41Decoder.csproj", "{F72DB8C4-8EF0-430B-99BE-5A8D36E1C2D6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rs41Decoder", "Rs41Decoder.csproj", "{F72DB8C4-8EF0-430B-99BE-5A8D36E1C2D6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RS41DecoderTest", "..\RS41DecoderTest\RS41DecoderTest.csproj", "{5D8EDAA7-DA45-470F-89E7-8DFEFE0B91AE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rs41DecoderTest", "..\RS41DecoderTest\Rs41DecoderTest.csproj", "{5D8EDAA7-DA45-470F-89E7-8DFEFE0B91AE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
