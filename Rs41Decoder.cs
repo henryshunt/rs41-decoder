@@ -5,7 +5,7 @@ using System.IO;
 namespace RSDecoder.RS41
 {
     /// <summary>
-    /// Represents a decoder for a static WAV file.
+    /// Represents a decoder for the RS41 radiosonde.
     /// </summary>
     public class Rs41Decoder
     {
@@ -28,7 +28,7 @@ namespace RSDecoder.RS41
         /// For decoding subframes.
         /// </summary>
         private readonly SubframeDecoder subframeDecoder = new SubframeDecoder();
-    
+
         /// <summary>
         /// Initialises a new instance of the <see cref="Rs41Decoder"/> class.
         /// </summary>
@@ -47,6 +47,15 @@ namespace RSDecoder.RS41
             List<Frame> frames = new List<Frame>();
             bool hasFoundHeader = false;
 
+            try
+            {
+                demodulator.Open();
+            }
+            catch (EndOfStreamException)
+            {
+                return frames;
+            }
+
             bool[] frameBits = new bool[Constants.FRAME_LENGTH * 8];
             Array.Copy(Constants.FRAME_HEADER, frameBits, Constants.FRAME_HEADER.Length);
             int frameBitsPos = Constants.FRAME_HEADER.Length;
@@ -55,7 +64,7 @@ namespace RSDecoder.RS41
             {
                 try
                 {
-                    foreach (bool bit in demodulator.ReadBits())
+                    foreach (bool bit in demodulator.ReadDemodulatedBits())
                     {
                         if (!hasFoundHeader)
                         {
