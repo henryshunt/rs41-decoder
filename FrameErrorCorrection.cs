@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Rs41Decoder
 {
-    public class FrameErrorCorrection
+    internal class FrameErrorCorrection
     {
         private byte[] frameBytes;
         private Frame decodedFrame;

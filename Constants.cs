@@ -1,6 +1,6 @@
 ﻿namespace Rs41Decoder
 {
-    public static class Constants
+    internal static class Constants
     {
         public const int BAUD_RATE = 4800;
 

@@ -2,7 +2,7 @@
 
 namespace Rs41Decoder
 {
-    class Utilities
+    internal class Utilities
     {
         private const double EARTH_A = 6378137;
         private const double EARTH_B = 6356752.31424518;
