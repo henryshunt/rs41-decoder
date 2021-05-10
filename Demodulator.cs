@@ -4,7 +4,7 @@ using System.Text;
 
 namespace RSDecoder.RS41
 {
-    public class WavFileDemodulator
+    public class Demodulator
     {
         public int NumberOfChannels { get; private set; }
         public int SampleRate { get; private set; }
@@ -20,7 +20,7 @@ namespace RSDecoder.RS41
         private int currentSampleSign = 1;
         private int previousSampleSign = 1;
 
-        public WavFileDemodulator(string wavPath)
+        public Demodulator(string wavPath)
         {
             this.wavPath = wavPath;
         }

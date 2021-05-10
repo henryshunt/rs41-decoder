@@ -7,12 +7,12 @@ namespace RSDecoder.RS41
     /// <summary>
     /// Represents a decoder for a static WAV file.
     /// </summary>
-    public class WavFileDecoder
+    public class Rs41Decoder
     {
         /// <summary>
         /// The demodulator.
         /// </summary>
-        private readonly WavFileDemodulator demodulator;
+        private readonly Demodulator demodulator;
 
         /// <summary>
         /// A circular buffer for detecting the frame header.
@@ -30,12 +30,12 @@ namespace RSDecoder.RS41
         private readonly SubframeDecoder subframeDecoder = new SubframeDecoder();
     
         /// <summary>
-        /// Initialises a new instance of the <see cref="WavFileDecoder"/> class.
+        /// Initialises a new instance of the <see cref="Rs41Decoder"/> class.
         /// </summary>
         /// <param name="wavPath">The WAV file to decode.</param>
-        public WavFileDecoder(string wavPath)
+        public Rs41Decoder(string wavPath)
         {
-            demodulator = new WavFileDemodulator(wavPath);
+            demodulator = new Demodulator(wavPath);
         }
 
         /// <summary>
