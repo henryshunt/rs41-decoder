@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace RSDecoder.RS41
+namespace RSDecoder
 {
     /// <summary>
     /// Represents a decoder for the RS41 radiosonde.

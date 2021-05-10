@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 
-namespace RSDecoder.RS41
+namespace RSDecoder
 {
     public class Frame
     {

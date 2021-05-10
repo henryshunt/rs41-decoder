@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace RSDecoder.RS41
+namespace RSDecoder
 {
     public class FrameErrorCorrection
     {
