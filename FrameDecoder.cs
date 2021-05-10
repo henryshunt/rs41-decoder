@@ -1,76 +1,108 @@
 ﻿using System;
+using static Rs41Decoder.Utilities;
 
 namespace Rs41Decoder
 {
+    /// <summary>
+    /// Represents a decoder for a single RS41 radiosonde frame.
+    /// </summary>
     internal class FrameDecoder
     {
+        /// <summary>
+        /// The frame bits to decode. Has a length of <see cref="Constants.FRAME_LENGTH"/> * 8.
+        /// </summary>
         private readonly bool[] frameBits;
-        private readonly byte[] frameBytes = new byte[Constants.FRAME_LENGTH];
 
-        public readonly Rs41Frame Frame = new Rs41Frame();
+        /// <summary>
+        /// The frame bytes to decode (same as the contents of <see cref="frameBits"/>, but as bytes). Has a length of
+        /// <see cref="Constants.FRAME_LENGTH"/>.
+        /// </summary>
+        private byte[] frameBytes = new byte[Constants.FRAME_LENGTH];
 
+        /// <summary>
+        /// The decoded frame.
+        /// </summary>
+        private readonly Rs41Frame frame = new Rs41Frame();
+
+        /// <summary>
+        /// A subframe decoder.
+        /// </summary>
         private readonly SubframeDecoder subframeDecoder;
-        private FrameErrorCorrection? ec = null;
 
+        /// <summary>
+        /// Manages error correction of the frame data.
+        /// </summary>
+        private FrameErrorCorrection? errorCorr = null;
+
+        /// <summary>
+        /// Initialises a new instance of the <see cref="FrameDecoder"/> class.
+        /// </summary>
+        /// <param name="frameBits">
+        /// The frame bits to decode. Must have a length of 4144 (the number of bytes in a frame times 8).
+        /// </param>
+        /// <param name="subframeDecoder">
+        /// A subframe decoder.
+        /// </param>
         public FrameDecoder(bool[] frameBits, SubframeDecoder subframeDecoder)
         {
             if (frameBits.Length != Constants.FRAME_LENGTH * 8)
             {
-                throw new ArgumentException(string.Format(
-                    "Argument {0} must contain {1} items", nameof(frameBits), Constants.FRAME_LENGTH * 8),
-                    nameof(frameBits));
+                throw new ArgumentException(
+                    nameof(frameBits) + " must have a length of 4144", nameof(frameBits));
             }
 
             this.frameBits = frameBits;
             this.subframeDecoder = subframeDecoder;
         }
 
-
+        /// <summary>
+        /// Decodes the frame bits into a frame.
+        /// </summary>
+        /// <returns>
+        /// The decoded frame.
+        /// </returns>
         public Rs41Frame Decode()
         {
             FrameBitsToBytes();
-            UnmaskFrameBytes();
+            UnscrambleFrameBytes();
 
-            ec = new FrameErrorCorrection(frameBytes, Frame);
-            ec.Correct();
+            errorCorr = new FrameErrorCorrection(frameBytes);
+            frameBytes = errorCorr.Correct();
 
-            Frame.IsExtendedFrame = frameBytes[Constants.POS_FRAME_TYPE] == 0xF0;
+            frame.IsExtendedFrame =
+                frameBytes[Constants.POS_FRAME_TYPE] == Constants.EXTENDED_FRAME_VALUE;
 
             DecodeFrameNumber();
             DecodeSerialNumber();
             DecodeBatteryVoltage();
 
-            if (ec.IsStatusBlockValid)
+            if (errorCorr.IsStatusBlockValid)
             {
                 int subframeNumber = frameBytes[Constants.POS_SUBFRAME_NUMBER];
 
-                byte[] subframeBytes = new byte[16];
-                for (int i = 0; i < 16; i++)
+                byte[] subframeBytes = new byte[Constants.SUBFRAME_PART_LENGTH];
+                for (int i = 0; i < Constants.SUBFRAME_PART_LENGTH; i++)
                     subframeBytes[i] = frameBytes[Constants.POS_SUBFRAME_BYTES + i];
 
                 if (subframeDecoder.AddSubframePart(subframeNumber, subframeBytes))
-                    Frame.Subframe = subframeDecoder.Subframe;
+                    frame.Subframe = subframeDecoder.Subframe;
             }
 
             DecodeTime();
-            DecodePosAndVel();
+            DecodePositionAndVelocity();
             DecodeGpsSatelliteCount();
             DecodeGpsVelocityAccuracy();
-            DecodeGpsPositionAccuracy();
-            DecodeThermoTemp();
-            DecodeThermoHumi();
+            DecodeGpsPositionPrecision();
+            DecodeTemperature();
+            DecodeHumidityTemperature();
             DecodeHumidity();
 
-            //if (!Frame.IsExtendedFrame)
-            //{
-            //    for (int i = Constants.STANDARD_FRAME_LENGTH - 1; i < Constants.FRAME_LENGTH; i++)
-            //        frameBytes[i] = 0;
-            //}
-
-            Console.WriteLine(Frame);
-            return Frame;
+            return frame;
         }
 
+        /// <summary>
+        /// Converts the contents of <see cref="frameBits"/> to bytes and stores them in <see cref="frameBytes"/>.
+        /// </summary>
         private void FrameBitsToBytes()
         {
             for (int i = 0; i < Constants.FRAME_LENGTH; i++)
@@ -84,68 +116,54 @@ namespace Rs41Decoder
             }
         }
 
-        private byte BoolArrayToByte(bool[] bits)
-        {
-            byte d = 1;
-            byte value = 0;
-
-            for (int i = 0; i < 8; i++) // little endian
-            {
-                if (bits[i] == true)
-                    value += d;
-                else if (bits[i] == false)
-                    value += 0;
-
-                d <<= 1;
-            }
-
-            return value;
-        }
-
-        private void UnmaskFrameBytes()
+        /// <summary>
+        /// Reverses the XOR scrambling applied to the frame data before it was transmitted.
+        /// </summary>
+        private void UnscrambleFrameBytes()
         {
             for (int i = 0; i < Constants.FRAME_LENGTH; i++)
-                frameBytes[i] = (byte)(frameBytes[i] ^ Constants.FRAME_MASK[i % Constants.FRAME_MASK.Length]);
+            {
+                frameBytes[i] = (byte)(frameBytes[i] ^
+                    Constants.FRAME_MASK[i % Constants.FRAME_MASK.Length]);
+            }
         }
 
-
+        #region Frame Part Decoding
         private void DecodeFrameNumber()
         {
-            if (!ec!.IsStatusBlockValid)
+            if (!errorCorr!.IsStatusBlockValid)
                 return;
 
             byte[] bytes = new byte[2];
-
             for (int i = 0; i < 2; i++)
                 bytes[i] = frameBytes[Constants.POS_FRAME_NUMBER + i];
 
-            Frame.Number = BitConverter.ToInt16(bytes);
+            frame.Number = BitConverter.ToInt16(bytes);
         }
 
         private void DecodeSerialNumber()
         {
-            if (!ec!.IsStatusBlockValid)
+            if (!errorCorr!.IsStatusBlockValid)
                 return;
 
             char[] bytes = new char[8];
-
             for (int i = 0; i < 8; i++)
                 bytes[i] = (char)frameBytes[Constants.POS_SERIAL_NUMBER + i];
 
-            Frame.SerialNumber = new string(bytes);
+            frame.SerialNumber = new string(bytes);
         }
 
         private void DecodeBatteryVoltage()
         {
-            if (!ec!.IsStatusBlockValid)
+            if (!errorCorr!.IsStatusBlockValid)
                 return;
 
-            Frame.BatteryVoltage = frameBytes[Constants.POS_BATTERY_VOLTAGE] / (double)10;
+            frame.BatteryVoltage = frameBytes[Constants.POS_BATTERY_VOLTAGE] / (double)10;
         }
 
         private void DecodeTime()
         {
-            if (!ec!.IsStatusBlockValid || !ec!.IsGpsInfoBlockValid)
+            if (!errorCorr!.IsStatusBlockValid || !errorCorr!.IsGpsInfoBlockValid)
                 return;
 
             byte[] bytes = new byte[2];
@@ -161,30 +179,30 @@ namespace Rs41Decoder
             DateTime time = new DateTime(1980, 1, 6);
             time = time.AddDays(week * 7);
             time = time.AddSeconds(secondsOfWeek);
-            Frame.Time = time;
+            frame.Time = time;
         }
 
-        private void DecodePosAndVel()
+        private void DecodePositionAndVelocity()
         {
-            if (!ec!.IsGpsPositionBlockValid)
+            if (!errorCorr!.IsGpsPositionBlockValid)
                 return;
 
             (double, double, double) ecefPositions = DecodeEcefPositions();
-            (double, double, double) positions = Utilities.EcefToLlh(
+            (double, double, double) positions = EcefToLlh(
                 ecefPositions.Item1, ecefPositions.Item2, ecefPositions.Item3);
 
-            Frame.Latitude = positions.Item1;
-            Frame.Longitude = positions.Item2;
-            Frame.Elevation = positions.Item3;
+            frame.Latitude = positions.Item1;
+            frame.Longitude = positions.Item2;
+            frame.Elevation = positions.Item3;
 
             (double, double, double) ecefVelocities = DecodeEcefVelocities();
-            (double, double, double) velocities = Utilities.EcefToHdv(
-                (double)Frame.Latitude, (double)Frame.Longitude,
+            (double, double, double) velocities = EcefToHdv(
+                (double)frame.Latitude, (double)frame.Longitude,
                 ecefVelocities.Item1, ecefVelocities.Item2, ecefVelocities.Item3);
 
-            Frame.HorizontalVelocity = velocities.Item1;
-            Frame.Direction = velocities.Item2;
-            Frame.VerticalVelocity = velocities.Item3;
+            frame.HorizontalVelocity = velocities.Item1;
+            frame.Direction = velocities.Item2;
+            frame.VerticalVelocity = velocities.Item3;
         }
 
         private (double, double, double) DecodeEcefPositions()
@@ -233,31 +251,31 @@ namespace Rs41Decoder
 
         private void DecodeGpsSatelliteCount()
         {
-            if (!ec!.IsGpsPositionBlockValid)
+            if (!errorCorr!.IsGpsPositionBlockValid)
                 return;
 
-            Frame.GpsSatelliteCount = frameBytes[Constants.POS_GPS_SATELLITE_COUNT];
+            frame.GpsSatelliteCount = frameBytes[Constants.POS_GPS_SATELLITE_COUNT];
         }
 
         private void DecodeGpsVelocityAccuracy()
         {
-            if (!ec!.IsGpsPositionBlockValid)
+            if (!errorCorr!.IsGpsPositionBlockValid)
                 return;
 
-            Frame.VelocityAccuracy = frameBytes[Constants.POS_VELOCITY_ACCURACY] / (double)10;
+            frame.VelocityAccuracy = frameBytes[Constants.POS_VELOCITY_ACCURACY] / (double)10;
         }
 
-        private void DecodeGpsPositionAccuracy()
+        private void DecodeGpsPositionPrecision()
         {
-            if (!ec!.IsGpsPositionBlockValid)
+            if (!errorCorr!.IsGpsPositionBlockValid)
                 return;
 
-            Frame.PositionAccuracy = frameBytes[Constants.POS_POSITION_ACCURACY] / (double)10;
+            frame.PositionAccuracy = frameBytes[Constants.POS_POSITION_ACCURACY] / (double)10;
         }
 
-        private void DecodeThermoTemp()
+        private void DecodeTemperature()
         {
-            if (!ec!.IsMeasurementBlockValid || subframeDecoder.Subframe == null)
+            if (!errorCorr!.IsMeasurementBlockValid || subframeDecoder.Subframe == null)
                 return;
 
             Rs41Subframe subframe = subframeDecoder.Subframe;
@@ -285,12 +303,12 @@ namespace Rs41Decoder
                 * R + subframe.ThermoTempConstant3 * R * R + subframe.ThermoTempCalibration2)
                 * (1.0 + subframe.ThermoTempCalibration3);
 
-            Frame.Temperature = T;
+            frame.Temperature = T;
         }
 
-        private void DecodeThermoHumi()
+        private void DecodeHumidityTemperature()
         {
-            if (!ec!.IsMeasurementBlockValid || subframeDecoder.Subframe == null)
+            if (!errorCorr!.IsMeasurementBlockValid || subframeDecoder.Subframe == null)
                 return;
 
             Rs41Subframe subframe = subframeDecoder.Subframe;
@@ -318,13 +336,13 @@ namespace Rs41Decoder
                 * R + subframe.ThermoHumiConstant3 * R * R + subframe.ThermoHumiCalibration2)
                 * (1.0 + subframe.ThermoHumiCalibration3);
 
-            Frame.HumidityModuleTemp = T;
+            frame.HumidityModuleTemp = T;
         }
 
         private void DecodeHumidity()
         {
-            if (!ec!.IsMeasurementBlockValid || subframeDecoder.Subframe == null ||
-                Frame.Temperature == null)
+            if (!errorCorr!.IsMeasurementBlockValid || subframeDecoder.Subframe == null ||
+                frame.Temperature == null)
             {
                 return;
             }
@@ -350,10 +368,10 @@ namespace Rs41Decoder
             double rh = 100.0 * (a1 * fh - a0);
             double T0 = 0.0, T1 = -25.0; // T/C
 
-            rh += T0 - (double)Frame.Temperature / 5.5;                    // empir. temperature compensation
+            rh += T0 - (double)frame.Temperature / 5.5;                    // empir. temperature compensation
 
-            if (Frame.Temperature < T1)
-                rh *= 1.0 + (T1 - (double)Frame.Temperature) / 90.0; // empir. temperature compensation
+            if (frame.Temperature < T1)
+                rh *= 1.0 + (T1 - (double)frame.Temperature) / 90.0; // empir. temperature compensation
 
             if (rh < 0.0)
                 rh = 0.0;
@@ -361,10 +379,11 @@ namespace Rs41Decoder
             if (rh > 100.0)
                 rh = 100.0;
 
-            if (Frame.Temperature < -273.0)
+            if (frame.Temperature < -273.0)
                 rh = -1.0;
 
-            Frame.Humidity = rh;
+            frame.Humidity = rh;
         }
+        #endregion
     }
 }

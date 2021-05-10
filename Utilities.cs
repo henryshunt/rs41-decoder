@@ -29,7 +29,8 @@ namespace Rs41Decoder
             return (latitude, longitude, elevation);
         }
 
-        public static (double, double, double) EcefToHdv(double latitude, double longitude, double x, double y, double z)
+        public static (double, double, double)
+            EcefToHdv(double latitude, double longitude, double x, double y, double z)
         {
             // First convert from ECEF to NEU (north, east, up)
             double phi = latitude * Math.PI / 180.0;
@@ -47,6 +48,30 @@ namespace Rs41Decoder
                 direction += 360;
 
             return (vH, direction, vU);
+        }
+
+        public static byte BoolArrayToByte(bool[] bits)
+        {
+            if (bits.Length != 8)
+            {
+                throw new ArgumentException(
+                    nameof(bits) + " must have a length of 8", nameof(bits));
+            }
+
+            byte d = 1;
+            byte value = 0;
+
+            for (int i = 0; i < 8; i++) // little endian
+            {
+                if (bits[i] == true)
+                    value += d;
+                else if (bits[i] == false)
+                    value += 0;
+
+                d <<= 1;
+            }
+
+            return value;
         }
     }
 }

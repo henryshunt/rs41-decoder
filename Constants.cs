@@ -8,6 +8,7 @@
         public static int EXTENDED_DATA_LENGTH = 198; // bytes
         public static int FRAME_LENGTH = STANDARD_FRAME_LENGTH + EXTENDED_DATA_LENGTH; // bytes
         public static int SUBFRAME_LENGTH = 816; // bytes
+        public static int SUBFRAME_PART_LENGTH = 15; // bytes
 
         public static bool[] FRAME_HEADER =
         {
@@ -31,6 +32,7 @@
 
 
         public static int POS_ECC = 0x08; // 48 bytes
+        public static int EXTENDED_FRAME_VALUE = 0xF0;
 
         #region Status block
         public static int POS_BLK_STATUS = 0x039;

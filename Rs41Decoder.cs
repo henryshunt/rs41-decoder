@@ -26,7 +26,7 @@ namespace Rs41Decoder
         private int headerBufferPos = 0;
 
         /// <summary>
-        /// The subframe decoder.
+        /// Manages decoding of the subframes.
         /// </summary>
         private readonly SubframeDecoder subframeDecoder = new SubframeDecoder();
 

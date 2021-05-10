@@ -8,18 +8,63 @@ namespace Rs41Decoder
     internal class FrameErrorCorrection
     {
         private byte[] frameBytes;
-        private Rs41Frame decodedFrame;
 
-        public bool IsStatusBlockValid { get; set; } = false;
-        public bool IsMeasurementBlockValid { get; set; } = false;
-        public bool IsGpsInfoBlockValid { get; set; } = false;
-        public bool IsGpsRawBlockValid { get; set; } = false;
-        public bool IsGpsPositionBlockValid { get; set; } = false;
+        public bool IsStatusBlockValid =>
+            CheckBlockValidity(Constants.POS_BLK_STATUS, Constants.BLK_STATUS_HEADER);
+        public bool IsMeasurementBlockValid =>
+            CheckBlockValidity(Constants.POS_BLK_MEASUREMENT, Constants.BLK_MEASUREMENT_HEADER);
+        public bool IsGpsInfoBlockValid =>
+            CheckBlockValidity(Constants.POS_BLK_GPS_INFO, Constants.BLK_GPS_INFO_HEADER);
+        public bool IsGpsRawBlockValid =>
+            CheckBlockValidity(Constants.POS_BLK_GPS_RAW, Constants.BLK_GPS_RAW_HEADER);
+        public bool IsGpsPositionBlockValid =>
+            CheckBlockValidity(Constants.POS_BLK_GPS_POSITION, Constants.BLK_GPS_POSITION_HEADER);
 
-        public FrameErrorCorrection(byte[] frameBytes, Rs41Frame decodedFrame)
+        public FrameErrorCorrection(byte[] frameBytes)
         {
             this.frameBytes = frameBytes;
-            this.decodedFrame = decodedFrame;
+        }
+
+        public byte[] Correct()
+        {
+            //for (int i = Constants.STANDARD_FRAME_LENGTH; i < Constants.FRAME_LENGTH; i++)
+            //    frameBytes[i] = 0;
+
+            //int[] rs_codeword_1 = new int[255];
+
+            //for (int i = 0; i < 225 - 24; i++)
+            //    rs_codeword_1[i] = frameBytes[Constants.POS_FRAME_TYPE + (2 * i)];
+
+            //for (int i = 0; i < 24; i++)
+            //    rs_codeword_1[231 + i] = frameBytes[Constants.POS_ECC + i];
+
+
+            //int[] rs_codeword_2 = new int[255];
+
+            //for (int i = 0; i < 225 - 24; i++)
+            //    rs_codeword_2[i] = frameBytes[Constants.POS_FRAME_TYPE + (2 * i) + 1];
+
+            //for (int i = 0; i < 24; i++)
+            //    rs_codeword_2[231 + i] = frameBytes[Constants.POS_ECC + 24 + i];
+
+
+            //foreach (byte b in rs_codeword_1)
+            //    Console.Write("{0:X2} ", b);
+            //Console.WriteLine();
+            //Console.WriteLine();
+            //foreach (byte b in rs_codeword_2)
+            //    Console.Write("{0:X2} ", b);
+            //Console.WriteLine();
+            //Console.WriteLine();
+
+
+            //GenericGF field = new GenericGF(285, 256, 0, 2);
+            //ReedSolomonDecoder rsd = new ReedSolomonDecoder(field);
+
+            //Console.WriteLine(rsd.Decode(rs_codeword_1, 24));
+            //Console.WriteLine(rsd.Decode(rs_codeword_2, 24));
+
+            return frameBytes;
         }
 
         //public void Correct()
@@ -58,52 +103,6 @@ namespace Rs41Decoder
         //    //ReedSolomonDecoder rsd = new ReedSolomonDecoder(field);
         //    //rsd.Decode(rs_codeword_1, 9, null);
         //}
-
-        public void Correct()
-        {
-            IsStatusBlockValid = CheckBlockValidity(Constants.POS_BLK_STATUS, Constants.BLK_STATUS_HEADER);
-            IsMeasurementBlockValid = CheckBlockValidity(Constants.POS_BLK_MEASUREMENT, Constants.BLK_MEASUREMENT_HEADER);
-            IsGpsInfoBlockValid = CheckBlockValidity(Constants.POS_BLK_GPS_INFO, Constants.BLK_GPS_INFO_HEADER);
-            IsGpsRawBlockValid = CheckBlockValidity(Constants.POS_BLK_GPS_RAW, Constants.BLK_GPS_RAW_HEADER);
-            IsGpsPositionBlockValid = CheckBlockValidity(Constants.POS_BLK_GPS_POSITION, Constants.BLK_GPS_POSITION_HEADER);
-
-            //for (int i = Constants.STANDARD_FRAME_LENGTH; i < Constants.FRAME_LENGTH; i++)
-            //    frameBytes[i] = 0;
-
-            //int[] rs_codeword_1 = new int[255];
-
-            //for (int i = 0; i < 225 - 24; i++)
-            //    rs_codeword_1[i] = frameBytes[Constants.POS_FRAME_TYPE + (2 * i)];
-
-            //for (int i = 0; i < 24; i++)
-            //    rs_codeword_1[231 + i] = frameBytes[Constants.POS_ECC + i];
-
-
-            //int[] rs_codeword_2 = new int[255];
-
-            //for (int i = 0; i < 225 - 24; i++)
-            //    rs_codeword_2[i] = frameBytes[Constants.POS_FRAME_TYPE + (2 * i) + 1];
-
-            //for (int i = 0; i < 24; i++)
-            //    rs_codeword_2[231 + i] = frameBytes[Constants.POS_ECC + 24 + i];
-
-
-            //foreach (byte b in rs_codeword_1)
-            //    Console.Write("{0:X2} ", b);
-            //Console.WriteLine();
-            //Console.WriteLine();
-            //foreach (byte b in rs_codeword_2)
-            //    Console.Write("{0:X2} ", b);
-            //Console.WriteLine();
-            //Console.WriteLine();
-
-
-            //GenericGF field = new GenericGF(285, 256, 0, 2);
-            //ReedSolomonDecoder rsd = new ReedSolomonDecoder(field);
-
-            //Console.WriteLine(rsd.Decode(rs_codeword_1, 24));
-            //Console.WriteLine(rsd.Decode(rs_codeword_2, 24));
-        }
 
         private bool CheckBlockValidity(int blockStartPos, int blockHeader)
         {
