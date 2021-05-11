@@ -8,7 +8,7 @@
         public static int EXTENDED_DATA_LENGTH = 198; // bytes
         public static int FRAME_LENGTH = STANDARD_FRAME_LENGTH + EXTENDED_DATA_LENGTH; // bytes
         public static int SUBFRAME_LENGTH = 816; // bytes
-        public static int SUBFRAME_PART_LENGTH = 15; // bytes
+        public static int SUBFRAME_PART_LENGTH = 16; // bytes
         public static int SUBFRAME_NUMBER_FINAL = 50;
 
         public static bool[] FRAME_HEADER =
