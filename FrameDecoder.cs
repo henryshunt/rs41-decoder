@@ -38,17 +38,20 @@ namespace Rs41Decoder
         /// Initialises a new instance of the <see cref="FrameDecoder"/> class.
         /// </summary>
         /// <param name="frameBits">
-        /// The frame bits to decode. Must have a length of 4144 (the number of bytes in a frame times 8).
+        /// The frame bits to decode. Must have a length of <see cref="Constants.FRAME_LENGTH"/> * 8.
         /// </param>
         /// <param name="subframeDecoder">
         /// A subframe decoder.
         /// </param>
+        /// <exception cref="ArgumentException">
+        /// Thrown if <paramref name="frameBits"/> does not have the required length.
+        /// </exception>
         public FrameDecoder(bool[] frameBits, SubframeDecoder subframeDecoder)
         {
             if (frameBits.Length != Constants.FRAME_LENGTH * 8)
             {
-                throw new ArgumentException(
-                    nameof(frameBits) + " must have a length of 4144", nameof(frameBits));
+                throw new ArgumentException(nameof(frameBits) +
+                    " does not have the correct length", nameof(frameBits));
             }
 
             this.frameBits = frameBits;
@@ -97,6 +100,7 @@ namespace Rs41Decoder
             DecodeHumidityTemperature();
             DecodeHumidity();
 
+            Console.WriteLine(frame);
             return frame;
         }
 

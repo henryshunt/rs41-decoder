@@ -54,8 +54,8 @@ namespace Rs41Decoder
         {
             if (bits.Length != 8)
             {
-                throw new ArgumentException(
-                    nameof(bits) + " must have a length of 8", nameof(bits));
+                throw new ArgumentException(nameof(bits) +
+                    " does not have the correct length", nameof(bits));
             }
 
             byte d = 1;

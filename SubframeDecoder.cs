@@ -1,62 +1,115 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace Rs41Decoder
 {
+    /// <summary>
+    /// Represents a decoder for the subframe of an RS41 radiosonde.
+    /// </summary>
     internal class SubframeDecoder
     {
-        private readonly List<byte[]> subframeParts = new List<byte[]>();
-        private int lastSubframeNumber = -1;
-
+        /// <summary>
+        /// The subframe bytes to decode. Has a length of <see cref="Constants.SUBFRAME_LENGTH"/>.
+        /// </summary>
         private readonly byte[] subframeBytes = new byte[Constants.SUBFRAME_LENGTH];
 
-        public Rs41Subframe? Subframe { get; private set; } = null;
+        /// <summary>
+        /// The index within <see cref="subframeBytes"/> at which to place the next item.
+        /// </summary>
+        private int subframeBytesPos = 0;
 
+        /// <summary>
+        /// The number of the last subframe part added.
+        /// </summary>
+        private int prevPartNumber = -1;
 
-        public bool AddSubframePart(int subframeNumber, byte[] subframeBytes)
+        /// <summary>
+        /// The decoded subframe.
+        /// </summary>
+        public readonly Rs41Subframe Subframe = new Rs41Subframe();
+
+        /// <summary>
+        /// Initialises a new instance of the <see cref="SubframeDecoder"/> class.
+        /// </summary>
+        public SubframeDecoder() { }
+
+        /// <summary>
+        /// Caches a subframe part and, if all the other parts have been added, decodes the subframe. Once the subframe
+        /// is decoded, everything is reset and the parts of a new subframe can be added.
+        /// </summary>
+        /// <param name="partNumber">
+        /// The number of the subframe part to add. Must be between 0 and <see cref="Constants.SUBFRAME_NUMBER_FINAL"/>.
+        /// </param>
+        /// <param name="partBytes">
+        /// The bytes of the subframe part. Must have a length of <see cref="Constants.SUBFRAME_PART_LENGTH"/>.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the subframe was decoded, otherwise <see langword="false"/>.
+        /// </returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown if <paramref name="partNumber"/> is out of range.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        /// Thrown if <paramref name="partBytes"/> does not have the correct length.
+        /// </exception>
+        public bool AddSubframePart(int partNumber, byte[] partBytes)
         {
-            if (subframeNumber == lastSubframeNumber + 1)
+            if (partNumber < 0 || partNumber > Constants.SUBFRAME_NUMBER_FINAL)
             {
-                subframeParts.Add(subframeBytes);
-                if (subframeNumber == Constants.SUBFRAME_NUMBER_FINAL)
-                {
-                    DecodeSubframe();
+                throw new ArgumentOutOfRangeException(nameof(partNumber),
+                    nameof(partNumber) + " is out of range ");
+            }
 
-                    lastSubframeNumber = -1;
-                    subframeParts.Clear();
+            if (partBytes.Length != Constants.SUBFRAME_PART_LENGTH)
+            {
+                throw new ArgumentException(nameof(partBytes) +
+                    " does not have the correct length ", nameof(partBytes));
+            }
+
+            if (partNumber - 1 == prevPartNumber)
+            {
+                partBytes.CopyTo(subframeBytes, subframeBytesPos);
+
+                if (partNumber == Constants.SUBFRAME_NUMBER_FINAL)
+                {
+                    Decode();
+
+                    subframeBytesPos = 0;
+                    prevPartNumber = -1;
                     return true;
                 }
-                else lastSubframeNumber++;
+                else
+                {
+                    subframeBytesPos += partBytes.Length;
+                    prevPartNumber++;
+                }
             }
             else
             {
-                lastSubframeNumber = -1;
-                subframeParts.Clear();
+                subframeBytesPos = 0;
+                prevPartNumber = -1;
             }
 
             return false;
         }
 
-        private void DecodeSubframe()
+        /// <summary>
+        /// Decodes the subframe bytes into a subframe.
+        /// </summary>
+        private void Decode()
         {
-            int i = 0;
-            foreach (byte[] ba in subframeParts)
-            {
-                foreach (byte b in ba)
-                    subframeBytes[i++] = b;
-            }
+            DecodeBurstKill();
+            DecodeDeviceType();
+            DecodeFrequency();
+            DecodeCalibration();
+        }
 
-            Subframe = new Rs41Subframe();
-
+        #region Subframe Part Decoding
+        private void DecodeBurstKill()
+        {
             if (subframeBytes[Constants.POS_SUB_BURST_KILL_STATUS] == 0x0)
                 Subframe.IsBurstKillEnabled = false;
             else if (subframeBytes[Constants.POS_SUB_BURST_KILL_STATUS] == 0x1)
                 Subframe.IsBurstKillEnabled = true;
-
-            DecodeDeviceType();
-            DecodeFrequency();
-            DecodeCalibration();
         }
 
         private void DecodeDeviceType()
@@ -150,5 +203,6 @@ namespace Rs41Decoder
                 bytes[i] = subframeBytes[Constants.POS_SUB_THERMO_HUMI_CALIB3 + i];
             Subframe.ThermoHumiCalibration3 = BitConverter.ToSingle(bytes);
         }
+        #endregion
     }
 }

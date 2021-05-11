@@ -9,6 +9,7 @@
         public static int FRAME_LENGTH = STANDARD_FRAME_LENGTH + EXTENDED_DATA_LENGTH; // bytes
         public static int SUBFRAME_LENGTH = 816; // bytes
         public static int SUBFRAME_PART_LENGTH = 15; // bytes
+        public static int SUBFRAME_NUMBER_FINAL = 50;
 
         public static bool[] FRAME_HEADER =
         {
@@ -43,7 +44,6 @@
         public static int POS_SERIAL_NUMBER = 0x03D; // 8 bytes
         public static int POS_BATTERY_VOLTAGE = 0x045; // 1 byte
         public static int POS_SUBFRAME_NUMBER = 0x052; // 1 byte
-        public static int SUBFRAME_NUMBER_FINAL = 50;
         public static int POS_SUBFRAME_BYTES = 0x053; // 16 bytes
         #endregion
 
