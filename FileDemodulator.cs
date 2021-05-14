@@ -1,34 +1,15 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 
 namespace Rs41Decoder
 {
     /// <summary>
-    /// Represents a WAV file demodulator for the RS41 radiosonde.
+    /// Represents a demodulator for the RS41 radiosonde where the data source is a pre-recorded WAV file.
     /// </summary>
-    internal class Demodulator : IDisposable
+    internal class FileDemodulator : WavDemodulator, IDemodulator
     {
-        /// <summary>
-        /// The number of channels in the WAV file.
-        /// </summary>
-        private int numberOfChannels;
-
-        /// <summary>
-        /// The sample rate of the WAV file.
-        /// </summary>
-        private int sampleRate;
-
-        /// <summary>
-        /// The size of each WAV sample in bits.
-        /// </summary>
-        private int bitsPerWavSample;
-
-        /// <summary>
-        /// The number of WAV samples that make up one demodulated bit.
-        /// </summary>
-        private double samplesPerDemodBit;
-
         /// <summary>
         /// The path of the WAV file to demodulate.
         /// </summary>
@@ -45,22 +26,16 @@ namespace Rs41Decoder
         private BinaryReader? wavReader = null;
 
         /// <summary>
-        /// Indicates whether the last WAV sample to be read was above (1) or below (-1) the zero-point.
-        /// </summary>
-        private int currentSampleSign = 1;
-
-        /// <summary>
-        /// Indicates whether the second-to-last WAV sample to be read was above (1) or below (-1) the zero-point.
-        /// </summary>
-        private int previousSampleSign = 1;
-
-        /// <summary>
-        /// Initialises a new instance of the <see cref="Demodulator"/> class.
+        /// Initialises a new instance of the <see cref="FileDemodulator"/> class.
         /// </summary>
         /// <param name="wavFile">
         /// The path of the WAV file to demodulate.
         /// </param>
-        public Demodulator(string wavFile)
+        /// <param name="cancellationToken">
+        /// A <see cref="CancellationToken"/>, used for cancelling the demodulation.
+        /// </param>
+        public FileDemodulator(string wavFile, CancellationToken cancellationToken)
+            : base(cancellationToken)
         {
             this.wavFile = wavFile;
         }
@@ -89,74 +64,6 @@ namespace Rs41Decoder
         {
             wavReader?.Close();
             wavStream?.Close();
-        }
-
-        /// <summary>
-        /// Reads a number of demodulated bits from the WAV file.
-        /// </summary>
-        /// <remarks>
-        /// Demodulated bits are read until the bit value changes. This means that all values in the return array will
-        /// be identical.
-        /// </remarks>
-        /// <returns>
-        /// The read demodulated bits.
-        /// </returns>
-        public bool[] ReadDemodulatedBits()
-        {
-            int sampleCount = 0;
-
-            // Read samples until we read one that crosses the zero-point
-            do
-            {
-                short sample = ReadWavSample();
-
-                previousSampleSign = currentSampleSign;
-                currentSampleSign = (sample >= 0) ? 1 : -1;
-                sampleCount++;
-            }
-            while (currentSampleSign == previousSampleSign);
-
-            // Calculate how many bits we have in the sequence of samples
-            double bitCount = sampleCount / samplesPerDemodBit;
-            int bitCount2 = (int)(bitCount + 0.5);
-
-            bool[] bits = new bool[bitCount2];
-
-            for (int i = 0; i < bitCount2; i++)
-                bits[i] = previousSampleSign != -1;
-
-            return bits;
-        }
-
-        /// <summary>
-        /// Reads a single WAV sample from the file (using <see cref="wavReader"/>).
-        /// </summary>
-        /// <returns>
-        /// The value of the read WAV sample.
-        /// </returns>
-        private short ReadWavSample()
-        {
-            short sample = 0;
-
-            for (int channel = 0; channel < numberOfChannels; channel++)
-            {
-                byte buffer = wavReader!.ReadByte();
-
-                if (channel == 0)
-                    sample = buffer;
-
-                if (bitsPerWavSample == 16)
-                {
-                    buffer = wavReader.ReadByte();
-
-                    if (channel == 0)
-                        sample += (short)(buffer << 8);
-                }
-            }
-
-            if (bitsPerWavSample == 8)
-                return (short)(sample - 128);
-            else return sample;
         }
 
         /// <summary>
@@ -212,8 +119,8 @@ namespace Rs41Decoder
             if (wavReader.Read(buffer, 0, 4) < 4)
                 throw new EndOfStreamException();
 
-            sampleRate = BitConverter.ToInt32(buffer);
-            samplesPerDemodBit = sampleRate / (double)Constants.BAUD_RATE;
+            int sampleRate = BitConverter.ToInt32(buffer);
+            samplesPerDemodBit = (double)sampleRate / Constants.BAUD_RATE;
 
             // Skip along
             if (wavReader.ReadBytes(6).Length < 6)
@@ -235,6 +142,11 @@ namespace Rs41Decoder
             // Skip along to start of data
             if (wavReader.ReadBytes(4).Length < 4)
                 throw new EndOfStreamException();
+        }
+
+        protected override byte ReadWavByte()
+        {
+            return wavReader!.ReadByte();
         }
 
         /// <summary>

@@ -100,7 +100,6 @@ namespace Rs41Decoder
             DecodeHumidityTemperature();
             DecodeHumidity();
 
-            Console.WriteLine(frame);
             return frame;
         }
 

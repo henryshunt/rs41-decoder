@@ -3,7 +3,7 @@
 namespace Rs41Decoder
 {
     /// <summary>
-    /// An exception that is thrown by a <see cref="Demodulator"/>.
+    /// An exception that is thrown by an <see cref="IDemodulator"/>.
     /// </summary>
     public class DemodulatorException : Exception
     {
