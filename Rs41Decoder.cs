@@ -36,16 +36,6 @@ namespace Rs41Decoder
         /// </summary>
         private int headerBufferPos = 0;
 
-        /// <summary>
-        /// The decoded frames.
-        /// </summary>
-        private readonly List<Rs41Frame> frames = new List<Rs41Frame>();
-
-        /// <summary>
-        /// The decoded frames.
-        /// </summary>
-        public IReadOnlyList<Rs41Frame> Frames => frames.AsReadOnly();
-
         private readonly SubframeDecoder subframeDecoder = new SubframeDecoder();
 
         /// <summary>
@@ -93,16 +83,11 @@ namespace Rs41Decoder
                 {
                     demodulator.Open();
 
-                    // Decoding a pre-recorded file will produce the same frames every time, so we don't
-                    // want to keep the frames from the previous decoding
-                    if (demodulator is FileDemodulator)
-                        frames.Clear();
-
-                    bool hasFoundHeader = false;
-
                     bool[] frameBits = new bool[Constants.FRAME_LENGTH * 8];
                     Array.Copy(Constants.FRAME_HEADER, frameBits, Constants.FRAME_HEADER.Length);
                     int frameBitsPos = Constants.FRAME_HEADER.Length;
+
+                    bool hasFoundHeader = false;
 
                     while (true)
                     {
@@ -129,7 +114,6 @@ namespace Rs41Decoder
                                 if (frameBitsPos == frameBits.Length)
                                 {
                                     Rs41Frame frame = new FrameDecoder(frameBits, subframeDecoder).Decode();
-                                    frames.Add(frame);
 
                                     frameBitsPos = Constants.FRAME_HEADER.Length;
                                     hasFoundHeader = false;
