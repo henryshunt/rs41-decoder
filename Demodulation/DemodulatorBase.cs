@@ -27,7 +27,7 @@ namespace Rs41Decoder.Demodulation
         /// <summary>
         /// Used for cancelling the demodulation.
         /// </summary>
-        private readonly CancellationToken cancellationToken;
+        protected readonly CancellationToken cancellationToken;
 
         /// <summary>
         /// Indicates whether the last WAV sample to be read was above (1) or below (-1) the zero-point.

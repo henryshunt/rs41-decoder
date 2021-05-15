@@ -75,12 +75,12 @@ namespace Rs41Decoder
         /// Initialises a new instance of the <see cref="Rs41Decoder"/> class with the data source being an audio input
         /// device.
         /// </summary>
-        /// <param name="wavFile">
-        /// The index of the audio input device to use as the data source.
+        /// <param name="deviceNumber">
+        /// The number of the audio input device to use as the data source.
         /// </param>
-        public Rs41Decoder(int deviceIndex)
+        public Rs41Decoder(int deviceNumber)
         {
-            demodulator = new LiveDemodulator(deviceIndex, cancellationToken.Token);
+            demodulator = new LiveDemodulator(deviceNumber, cancellationToken.Token);
         }
 
         /// <summary>
@@ -147,10 +147,12 @@ namespace Rs41Decoder
             catch (Exception ex)
             when (ex is EndOfStreamException || ex is OperationCanceledException)
             {
+                demodulator.Close();
                 IsDecoding = false;
             }
             catch
             {
+                demodulator.Close();
                 IsDecoding = false;
                 throw;
             }
