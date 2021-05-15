@@ -155,6 +155,8 @@ namespace Rs41Decoder
         public void Dispose()
         {
             Close();
+            wavStream?.Dispose();
+            wavReader?.Dispose();
         }
     }
 }

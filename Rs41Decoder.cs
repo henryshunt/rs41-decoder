@@ -69,6 +69,18 @@ namespace Rs41Decoder
         }
 
         /// <summary>
+        /// Initialises a new instance of the <see cref="Rs41Decoder"/> class with the data source being an audio input
+        /// device.
+        /// </summary>
+        /// <param name="wavFile">
+        /// The index of the audio input device to use as the data source.
+        /// </param>
+        public Rs41Decoder(int deviceIndex)
+        {
+            demodulator = new LiveDemodulator(deviceIndex, cancellationToken.Token);
+        }
+
+        /// <summary>
         /// Starts the process of decoding the frames contained within the data source.
         /// </summary>
         public void StartDecoding()

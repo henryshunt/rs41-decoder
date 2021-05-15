@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="NAudio.WinMM" Version="2.0.0" />
     <PackageReference Include="STH1123.ReedSolomon" Version="2.1.0" />
   </ItemGroup>
 

@@ -15,19 +15,14 @@ namespace Rs41Decoder
         private readonly CancellationToken cancellationToken;
 
         /// <summary>
-        /// Indicates whether the demodulator is open.
+        /// The size of each WAV sample in bits.
         /// </summary>
-        public bool IsOpen { get; private set; } = false;
+        protected int bitsPerWavSample = 16;
 
         /// <summary>
         /// The number of channels in the WAV data.
         /// </summary>
-        protected int? numberOfChannels = null;
-
-        /// <summary>
-        /// The size of each WAV sample in bits.
-        /// </summary>
-        protected int? bitsPerWavSample = null;
+        protected int numberOfChannels = 1;
 
         /// <summary>
         /// The number of WAV samples that make up one demodulated bit.
