@@ -145,6 +145,7 @@ namespace Rs41Decoder
         public void StopDecoding()
         {
             cancellationToken?.Cancel();
+            demodulator.Close();
             IsDecoding = false;
         }
 
