@@ -15,14 +15,7 @@ namespace Rs41Decoder.Demodulation
         /// </summary>
         private readonly string wavFile;
 
-        /// <summary>
-        /// A <see cref="FileStream"/> for the WAV file.
-        /// </summary>
         private FileStream? wavStream = null;
-
-        /// <summary>
-        /// A <see cref="BinaryReader"/> for the WAV file.
-        /// </summary>
         private BinaryReader? wavReader = null;
 
         /// <summary>

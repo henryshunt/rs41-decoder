@@ -10,9 +10,6 @@ namespace Rs41Decoder.Demodulation
     /// </summary>
     internal class LiveDemodulator : DemodulatorBase
     {
-        /// <summary>
-        /// The rate to sample the audio input device at.
-        /// </summary>
         private const int SAMPLE_RATE = 37500;
 
         /// <summary>
@@ -20,9 +17,6 @@ namespace Rs41Decoder.Demodulation
         /// </summary>
         private readonly int deviceNumber;
 
-        /// <summary>
-        /// The audio input device.
-        /// </summary>
         private WaveInEvent? audioDevice = null;
 
         /// <summary>
@@ -89,9 +83,6 @@ namespace Rs41Decoder.Demodulation
         /// <summary>
         /// Reads a byte from the WAV data, hanging indefinitely until a byte is available.
         /// </summary>
-        /// <returns>
-        /// The byte.
-        /// </returns>
         /// <exception cref="OperationCanceledException">
         /// Thrown if the demodulation is cancelled.
         /// </exception>

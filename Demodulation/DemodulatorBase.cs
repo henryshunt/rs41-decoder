@@ -67,9 +67,6 @@ namespace Rs41Decoder.Demodulation
         /// Demodulated bits are read until the bit value changes. This means that all values in the return array will
         /// be identical.
         /// </remarks>
-        /// <returns>
-        /// The demodulated bits.
-        /// </returns>
         /// <exception cref="OperationCanceledException">
         /// Thrown if the demodulation is cancelled.
         /// </exception>
@@ -104,9 +101,6 @@ namespace Rs41Decoder.Demodulation
         /// <summary>
         /// Reads a single WAV sample from the WAV data.
         /// </summary>
-        /// <returns>
-        /// The WAV sample value.
-        /// </returns>
         /// <exception cref="OperationCanceledException">
         /// Thrown if the demodulation is cancelled.
         /// </exception>
@@ -140,9 +134,6 @@ namespace Rs41Decoder.Demodulation
         /// <summary>
         /// Reads a byte from the WAV data.
         /// </summary>
-        /// <returns>
-        /// The byte.
-        /// </returns>
         protected abstract byte ReadWavByte();
 
         public abstract void Dispose();

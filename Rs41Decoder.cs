@@ -14,9 +14,6 @@ namespace Rs41Decoder
     /// </summary>
     public class Rs41Decoder : IDisposable
     {
-        /// <summary>
-        /// The demodulator.
-        /// </summary>
         private readonly DemodulatorBase demodulator;
 
         /// <summary>
@@ -49,9 +46,6 @@ namespace Rs41Decoder
         /// </summary>
         public IReadOnlyList<Rs41Frame> Frames => frames.AsReadOnly();
 
-        /// <summary>
-        /// Manages decoding of subframes.
-        /// </summary>
         private readonly SubframeDecoder subframeDecoder = new SubframeDecoder();
 
         /// <summary>

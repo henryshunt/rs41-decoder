@@ -24,14 +24,7 @@ namespace Rs41Decoder.Decoding
         /// </summary>
         private readonly Rs41Frame frame = new Rs41Frame();
 
-        /// <summary>
-        /// A subframe decoder.
-        /// </summary>
         private readonly SubframeDecoder subframeDecoder;
-
-        /// <summary>
-        /// Manages error correction of the frame data.
-        /// </summary>
         private FrameErrorCorrection? errorCorr = null;
 
         /// <summary>
@@ -61,9 +54,6 @@ namespace Rs41Decoder.Decoding
         /// <summary>
         /// Decodes the frame bits into a frame.
         /// </summary>
-        /// <returns>
-        /// The decoded frame.
-        /// </returns>
         public Rs41Frame Decode()
         {
             FrameBitsToBytes();
