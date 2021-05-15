@@ -86,84 +86,79 @@ namespace Rs41Decoder
         /// <summary>
         /// Starts the process of decoding the frames contained within the data source.
         /// </summary>
-        public void StartDecoding()
+        public Task StartDecodingAsync()
         {
-            if (IsDecoding)
-                throw new InvalidOperationException("Decoding has already started");
-
-            IsDecoding = true;
-
-            try
+            return Task.Run(() =>
             {
-                demodulator.Open();
+                if (IsDecoding)
+                    throw new InvalidOperationException("Decoding has already started");
 
-                // Decoding a pre-recorded file will produce the same frames every time, so we don't
-                // want to keep the frames from the previous decoding
-                if (demodulator is FileDemodulator)
-                    frames.Clear();
+                IsDecoding = true;
 
-                bool hasFoundHeader = false;
-
-                bool[] frameBits = new bool[Constants.FRAME_LENGTH * 8];
-                Array.Copy(Constants.FRAME_HEADER, frameBits, Constants.FRAME_HEADER.Length);
-                int frameBitsPos = Constants.FRAME_HEADER.Length;
-
-                while (true)
+                try
                 {
-                    if (cancellationToken.IsCancellationRequested)
-                        return;
+                    demodulator.Open();
 
-                    foreach (bool bit in demodulator.ReadDemodulatedBits())
+                    // Decoding a pre-recorded file will produce the same frames every time, so we don't
+                    // want to keep the frames from the previous decoding
+                    if (demodulator is FileDemodulator)
+                        frames.Clear();
+
+                    bool hasFoundHeader = false;
+
+                    bool[] frameBits = new bool[Constants.FRAME_LENGTH * 8];
+                    Array.Copy(Constants.FRAME_HEADER, frameBits, Constants.FRAME_HEADER.Length);
+                    int frameBitsPos = Constants.FRAME_HEADER.Length;
+
+                    while (true)
                     {
                         if (cancellationToken.IsCancellationRequested)
                             return;
 
-                        if (!hasFoundHeader)
+                        foreach (bool bit in demodulator.ReadDemodulatedBits())
                         {
-                            headerBuffer[headerBufferPos] = bit;
-                            headerBufferPos = (headerBufferPos + 1) % headerBuffer.Length;
+                            if (cancellationToken.IsCancellationRequested)
+                                return;
 
-                            if (CheckForFrameHeader())
-                                hasFoundHeader = true;
-                        }
-                        else
-                        {
-                            frameBits[frameBitsPos++] = bit;
-
-                            if (frameBitsPos == frameBits.Length)
+                            if (!hasFoundHeader)
                             {
-                                Rs41Frame frame = new FrameDecoder(frameBits, subframeDecoder).Decode();
-                                frames.Add(frame);
+                                headerBuffer[headerBufferPos] = bit;
+                                headerBufferPos = (headerBufferPos + 1) % headerBuffer.Length;
 
-                                frameBitsPos = Constants.FRAME_HEADER.Length;
-                                hasFoundHeader = false;
+                                if (CheckForFrameHeader())
+                                    hasFoundHeader = true;
+                            }
+                            else
+                            {
+                                frameBits[frameBitsPos++] = bit;
 
-                                FrameDecoded?.Invoke(this, new FrameDecodedEventArgs(frame));
+                                if (frameBitsPos == frameBits.Length)
+                                {
+                                    Rs41Frame frame = new FrameDecoder(frameBits, subframeDecoder).Decode();
+                                    frames.Add(frame);
+
+                                    frameBitsPos = Constants.FRAME_HEADER.Length;
+                                    hasFoundHeader = false;
+
+                                    FrameDecoded?.Invoke(this, new FrameDecodedEventArgs(frame));
+                                }
                             }
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            when (ex is EndOfStreamException || ex is OperationCanceledException)
-            {
-                demodulator.Close();
-                IsDecoding = false;
-            }
-            catch
-            {
-                demodulator.Close();
-                IsDecoding = false;
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Starts the process of decoding the frames contained within the data source.
-        /// </summary>
-        public Task StartDecodingAsync()
-        {
-            return Task.Run(StartDecoding);
+                catch (Exception ex)
+                when (ex is EndOfStreamException || ex is OperationCanceledException)
+                {
+                    demodulator.Close();
+                    IsDecoding = false;
+                }
+                catch
+                {
+                    demodulator.Close();
+                    IsDecoding = false;
+                    throw;
+                }
+            });
         }
 
         /// <summary>
