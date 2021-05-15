@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Rs41Decoder
+namespace Rs41Decoder.Decoding
 {
     /// <summary>
     /// Represents event data about a frame that has been decoded.

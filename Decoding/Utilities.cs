@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Rs41Decoder
+namespace Rs41Decoder.Decoding
 {
     internal class Utilities
     {

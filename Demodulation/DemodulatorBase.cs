@@ -1,19 +1,14 @@
 ﻿using System;
 using System.Threading;
 
-namespace Rs41Decoder
+namespace Rs41Decoder.Demodulation
 {
     /// <summary>
     /// Represents the base of a demodulator for an RS41 radiosonde where the data to demodulate is in the form of WAV
     /// audio samples.
     /// </summary>
-    internal abstract class WavDemodulator
+    internal abstract class DemodulatorBase : IDisposable
     {
-        /// <summary>
-        /// Used for cancelling the demodulation.
-        /// </summary>
-        private readonly CancellationToken cancellationToken;
-
         /// <summary>
         /// The size of each WAV sample in bits.
         /// </summary>
@@ -30,6 +25,11 @@ namespace Rs41Decoder
         protected double? samplesPerDemodBit = null;
 
         /// <summary>
+        /// Used for cancelling the demodulation.
+        /// </summary>
+        private readonly CancellationToken cancellationToken;
+
+        /// <summary>
         /// Indicates whether the last WAV sample to be read was above (1) or below (-1) the zero-point.
         /// </summary>
         private int currentSampleSign = 1;
@@ -40,15 +40,25 @@ namespace Rs41Decoder
         private int previousSampleSign = 1;
 
         /// <summary>
-        /// Initialises a new instance of the <see cref="WavDemodulator"/> class.
+        /// Initialises a new instance of the <see cref="DemodulatorBase"/> class.
         /// </summary>
         /// <param name="cancellationToken">
         /// A <see cref="CancellationToken"/>, used for cancelling the demodulation.
         /// </param>
-        public WavDemodulator(CancellationToken cancellationToken)
+        public DemodulatorBase(CancellationToken cancellationToken)
         {
             this.cancellationToken = cancellationToken;
         }
+
+        /// <summary>
+        /// Opens the demodulator.
+        /// </summary>
+        public abstract void Open();
+
+        /// <summary>
+        /// Closes the demodulator.
+        /// </summary>
+        public abstract void Close();
 
         /// <summary>
         /// Reads a number of demodulated bits from the WAV data.
@@ -134,5 +144,7 @@ namespace Rs41Decoder
         /// The byte.
         /// </returns>
         protected abstract byte ReadWavByte();
+
+        public abstract void Dispose();
     }
 }

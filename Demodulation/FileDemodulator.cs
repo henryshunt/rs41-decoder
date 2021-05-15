@@ -3,12 +3,12 @@ using System.IO;
 using System.Text;
 using System.Threading;
 
-namespace Rs41Decoder
+namespace Rs41Decoder.Demodulation
 {
     /// <summary>
     /// Represents a demodulator for the RS41 radiosonde where the data source is a pre-recorded WAV file.
     /// </summary>
-    internal class FileDemodulator : WavDemodulator, IDemodulator
+    internal class FileDemodulator : DemodulatorBase
     {
         /// <summary>
         /// The path of the WAV file to demodulate.
@@ -46,7 +46,7 @@ namespace Rs41Decoder
         /// <exception cref="DemodulatorException">
         /// Thrown if the number of bits per WAV sample sample is unsupported.
         /// </exception>
-        public void Open()
+        public override void Open()
         {
             wavStream = File.OpenRead(wavFile);
             wavReader = new BinaryReader(wavStream);
@@ -60,15 +60,15 @@ namespace Rs41Decoder
         /// <summary>
         /// Closes the demodulator.
         /// </summary>
-        public void Close()
+        public override void Close()
         {
             wavReader?.Close();
             wavStream?.Close();
         }
 
         /// <summary>
-        /// Reads the WAV header from the file (using <see cref="wavReader"/>), populating various related members, and
-        /// advances to the start of the data section of the file.
+        /// Populates relevant members with information from the WAV file header and advances to the start of the data
+        /// section of the file.
         /// </summary>
         /// <exception cref="EndOfStreamException">
         /// Thrown if the end of the stream is reached.
@@ -152,7 +152,7 @@ namespace Rs41Decoder
         /// <summary>
         /// Disposes the demodulator.
         /// </summary>
-        public void Dispose()
+        public override void Dispose()
         {
             Close();
             wavStream?.Dispose();

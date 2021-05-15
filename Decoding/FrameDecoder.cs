@@ -1,7 +1,7 @@
 ﻿using System;
-using static Rs41Decoder.Utilities;
+using static Rs41Decoder.Decoding.Utilities;
 
-namespace Rs41Decoder
+namespace Rs41Decoder.Decoding
 {
     /// <summary>
     /// Represents a decoder for a single RS41 radiosonde frame.

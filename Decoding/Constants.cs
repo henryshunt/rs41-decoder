@@ -1,9 +1,7 @@
-﻿namespace Rs41Decoder
+﻿namespace Rs41Decoder.Decoding
 {
     internal static class Constants
     {
-        public const int BAUD_RATE = 4800;
-
         public static int STANDARD_FRAME_LENGTH = 320; // bytes
         public static int EXTENDED_DATA_LENGTH = 198; // bytes
         public static int FRAME_LENGTH = STANDARD_FRAME_LENGTH + EXTENDED_DATA_LENGTH; // bytes

@@ -7,4 +7,10 @@ This is work in progress, but decoding is implemented and working. It reads a WA
 
 # Usage
 	Rs41Decoder.Rs41Decoder decoder = new Rs41Decoder.Rs41Decoder("audio.wav");
-	List<Rs41Frame> frames = await decoder.Decode();
+	decoder.FrameDecoded += Decoder_FrameDecoded;
+	await decoder.StartDecodingAsync();
+
+	private void Decoder_FrameDecoded(object sender, FrameDecodedEventArgs e)
+    {
+        Console.WriteLine(e.Frame);
+    }

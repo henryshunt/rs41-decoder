@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Rs41Decoder
+namespace Rs41Decoder.Decoding
 {
     internal class FrameErrorCorrection
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Rs41Decoder
+namespace Rs41Decoder.Decoding
 {
     /// <summary>
     /// Represents a decoder for the subframe of an RS41 radiosonde.

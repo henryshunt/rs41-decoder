@@ -2,18 +2,18 @@
 using System.Collections.Concurrent;
 using System.Threading;
 
-namespace Rs41Decoder
+namespace Rs41Decoder.Demodulation
 {
     /// <summary>
     /// Represents a demodulator for the RS41 radiosonde where the data source is an audio input device.
     /// </summary>
-    internal class LiveDemodulator : WavDemodulator, IDemodulator
+    internal class LiveDemodulator : DemodulatorBase
     {
         private const int SAMPLE_RATE = 37500;
 
         private readonly int deviceNumber;
         private WaveInEvent? audioDevice = null;
-        private ConcurrentQueue<byte> audioBytes = new ConcurrentQueue<byte>();
+        private readonly ConcurrentQueue<byte> audioBytes = new ConcurrentQueue<byte>();
 
         /// <summary>
         /// Initialises a new instance of the <see cref="FileDemodulator"/> class.
@@ -28,14 +28,13 @@ namespace Rs41Decoder
             : base(cancellationToken)
         {
             this.deviceNumber = deviceNumber;
-
             samplesPerDemodBit = (double)SAMPLE_RATE / Constants.BAUD_RATE;
         }
 
         /// <summary>
         /// Opens the demodulator.
         /// </summary>
-        public void Open()
+        public override void Open()
         {
             audioDevice = new WaveInEvent()
             {
@@ -57,7 +56,7 @@ namespace Rs41Decoder
         /// <summary>
         /// Closes the demodulator.
         /// </summary>
-        public void Close()
+        public override void Close()
         {
             audioDevice?.StopRecording();
         }
@@ -74,7 +73,7 @@ namespace Rs41Decoder
         /// <summary>
         /// Disposes the demodulator.
         /// </summary>
-        public void Dispose()
+        public override void Dispose()
         {
             Close();
             audioDevice?.Dispose();

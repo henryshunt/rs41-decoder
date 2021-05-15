@@ -1,8 +1,11 @@
-﻿using System;
+﻿using Rs41Decoder.Decoding;
+using Rs41Decoder.Demodulation;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Constants = Rs41Decoder.Decoding.Constants;
 
 namespace Rs41Decoder
 {
@@ -14,7 +17,7 @@ namespace Rs41Decoder
         /// <summary>
         /// The demodulator.
         /// </summary>
-        private readonly IDemodulator demodulator;
+        private readonly DemodulatorBase demodulator;
 
         /// <summary>
         /// Indicates whether the decoder is decoding.
