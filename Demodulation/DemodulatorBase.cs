@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 
 namespace Rs41Decoder.Demodulation
 {
@@ -9,6 +8,11 @@ namespace Rs41Decoder.Demodulation
     /// </summary>
     internal abstract class DemodulatorBase : IDisposable
     {
+        /// <summary>
+        /// Indicates whether the demodulator is open.
+        /// </summary>
+        public bool IsOpen { get; protected set; } = false;
+
         /// <summary>
         /// The size of each WAV sample in bits.
         /// </summary>
@@ -25,11 +29,6 @@ namespace Rs41Decoder.Demodulation
         protected double? samplesPerDemodBit = null;
 
         /// <summary>
-        /// Used for cancelling the demodulation.
-        /// </summary>
-        protected readonly CancellationToken cancellationToken;
-
-        /// <summary>
         /// Indicates whether the last WAV sample to be read was above (1) or below (-1) the zero-point.
         /// </summary>
         private int currentSampleSign = 1;
@@ -42,13 +41,7 @@ namespace Rs41Decoder.Demodulation
         /// <summary>
         /// Initialises a new instance of the <see cref="DemodulatorBase"/> class.
         /// </summary>
-        /// <param name="cancellationToken">
-        /// A <see cref="CancellationToken"/>, used for cancelling the demodulation.
-        /// </param>
-        public DemodulatorBase(CancellationToken cancellationToken)
-        {
-            this.cancellationToken = cancellationToken;
-        }
+        public DemodulatorBase() { }
 
         /// <summary>
         /// Opens the demodulator.
@@ -67,8 +60,8 @@ namespace Rs41Decoder.Demodulation
         /// Demodulated bits are read until the bit value changes. This means that all values in the return array will
         /// be identical.
         /// </remarks>
-        /// <exception cref="OperationCanceledException">
-        /// Thrown if the demodulation is cancelled.
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if the demodulator is not open.
         /// </exception>
         public bool[] ReadDemodulatedBits()
         {
@@ -77,7 +70,8 @@ namespace Rs41Decoder.Demodulation
             // Read samples until we read one that crosses the zero-point
             do
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                if (!IsOpen)
+                    throw new InvalidOperationException("The demodulator is not open");
 
                 short sample = ReadWavSample();
                 previousSampleSign = currentSampleSign;
@@ -101,16 +95,20 @@ namespace Rs41Decoder.Demodulation
         /// <summary>
         /// Reads a single WAV sample from the WAV data.
         /// </summary>
-        /// <exception cref="OperationCanceledException">
-        /// Thrown if the demodulation is cancelled.
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if the demodulator is not open.
         /// </exception>
         private short ReadWavSample()
         {
+            if (!IsOpen)
+                throw new InvalidOperationException("The demodulator is not open");
+
             short sample = 0;
 
             for (int channel = 0; channel < numberOfChannels; channel++)
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                if (!IsOpen)
+                    throw new InvalidOperationException("The demodulator is not open");
 
                 byte buffer = ReadWavByte();
                 if (channel == 0)
@@ -118,7 +116,8 @@ namespace Rs41Decoder.Demodulation
 
                 if (bitsPerWavSample == 16)
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
+                    if (!IsOpen)
+                        throw new InvalidOperationException("The demodulator is not open");
 
                     buffer = ReadWavByte();
                     if (channel == 0)
@@ -136,6 +135,6 @@ namespace Rs41Decoder.Demodulation
         /// </summary>
         protected abstract byte ReadWavByte();
 
-        public abstract void Dispose();
+        public void Dispose() => Close();
     }
 }

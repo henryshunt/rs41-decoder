@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-using System.Threading;
 
 namespace Rs41Decoder.Demodulation
 {
@@ -24,11 +23,7 @@ namespace Rs41Decoder.Demodulation
         /// <param name="wavFile">
         /// The path of the WAV file to demodulate.
         /// </param>
-        /// <param name="cancellationToken">
-        /// A <see cref="CancellationToken"/>, used for cancelling the demodulation.
-        /// </param>
-        public FileDemodulator(string wavFile, CancellationToken cancellationToken)
-            : base(cancellationToken)
+        public FileDemodulator(string wavFile)
         {
             this.wavFile = wavFile;
         }
@@ -36,11 +31,18 @@ namespace Rs41Decoder.Demodulation
         /// <summary>
         /// Opens the demodulator.
         /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if the demodulator is already open.
+        /// </exception>
         /// <exception cref="DemodulatorException">
-        /// Thrown if the number of bits per WAV sample sample is unsupported.
+        /// Thrown if the number of bits per WAV sample is unsupported.
         /// </exception>
         public override void Open()
         {
+            if (IsOpen)
+                throw new InvalidOperationException("The demodulator is already open");
+            IsOpen = true;
+
             wavStream = File.OpenRead(wavFile);
             wavReader = new BinaryReader(wavStream);
 
@@ -50,13 +52,11 @@ namespace Rs41Decoder.Demodulation
                 throw new DemodulatorException("The number of bits per WAV sample is unsuported");
         }
 
-        /// <summary>
-        /// Closes the demodulator.
-        /// </summary>
         public override void Close()
         {
-            wavReader?.Close();
-            wavStream?.Close();
+            wavReader?.Dispose();
+            wavStream?.Dispose();
+            IsOpen = false;
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace Rs41Decoder.Demodulation
         /// Thrown if the end of the stream is reached.
         /// </exception>
         /// <exception cref="DemodulatorException">
-        /// Thrown if the WAV header does not conform to the required format.
+        /// Thrown if the WAV header does not conform to the required format or contains invalid values.
         /// </exception>
         private void ReadWavHeader()
         {
@@ -107,12 +107,17 @@ namespace Rs41Decoder.Demodulation
                 throw new EndOfStreamException();
 
             numberOfChannels = buffer[0] + (buffer[1] << 8);
+            if (numberOfChannels <= 0)
+                throw new DemodulatorException("Invalid number of WAV channels");
 
             // Read sample rate
             if (wavReader.Read(buffer, 0, 4) < 4)
                 throw new EndOfStreamException();
 
             int sampleRate = BitConverter.ToInt32(buffer);
+            if (sampleRate <= 0)
+                throw new DemodulatorException("Invalid WAV sample rate");
+
             samplesPerDemodBit = (double)sampleRate / Constants.BAUD_RATE;
 
             // Skip along
@@ -124,6 +129,8 @@ namespace Rs41Decoder.Demodulation
                 throw new EndOfStreamException();
 
             bitsPerWavSample = buffer[0] + (buffer[1] << 8);
+            if (bitsPerWavSample <= 0)
+                throw new DemodulatorException("Invalid number of bits per WAV sample");
 
             // Check for data subchunk
             if (wavReader.Read(buffer, 0, 4) < 4)
@@ -140,16 +147,6 @@ namespace Rs41Decoder.Demodulation
         protected override byte ReadWavByte()
         {
             return wavReader!.ReadByte();
-        }
-
-        /// <summary>
-        /// Disposes the demodulator.
-        /// </summary>
-        public override void Dispose()
-        {
-            Close();
-            wavStream?.Dispose();
-            wavReader?.Dispose();
         }
     }
 }

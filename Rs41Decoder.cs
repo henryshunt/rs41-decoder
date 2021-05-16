@@ -52,7 +52,7 @@ namespace Rs41Decoder
         /// </param>
         public Rs41Decoder(string wavFile)
         {
-            demodulator = new FileDemodulator(wavFile, cancellationToken.Token);
+            demodulator = new FileDemodulator(wavFile);
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace Rs41Decoder
         /// </param>
         public Rs41Decoder(int deviceNumber)
         {
-            demodulator = new LiveDemodulator(deviceNumber, cancellationToken.Token);
+            demodulator = new LiveDemodulator(deviceNumber);
         }
 
         /// <summary>
@@ -76,7 +76,6 @@ namespace Rs41Decoder
             {
                 if (IsDecoding)
                     throw new InvalidOperationException("Decoding has already started");
-
                 IsDecoding = true;
 
                 try
@@ -92,7 +91,7 @@ namespace Rs41Decoder
                     while (true)
                     {
                         if (cancellationToken.IsCancellationRequested)
-                            return;
+                            break;
 
                         foreach (bool bit in demodulator.ReadDemodulatedBits())
                         {
@@ -125,17 +124,18 @@ namespace Rs41Decoder
                     }
                 }
                 catch (Exception ex)
-                when (ex is EndOfStreamException || ex is OperationCanceledException)
-                {
-                    demodulator.Close();
-                    IsDecoding = false;
-                }
+                when (ex is EndOfStreamException ||
+                    (ex is InvalidOperationException && ex.Message == "The demodulator is not open"))
+                { }
                 catch
                 {
                     demodulator.Close();
                     IsDecoding = false;
                     throw;
                 }
+
+                demodulator.Close();
+                IsDecoding = false;
             });
         }
 
@@ -174,9 +174,6 @@ namespace Rs41Decoder
             return i == Constants.FRAME_HEADER.Length;
         }
 
-        /// <summary>
-        /// Disposes the decoder.
-        /// </summary>
         public void Dispose()
         {
             StopDecoding();
