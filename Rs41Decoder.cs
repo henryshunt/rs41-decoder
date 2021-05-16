@@ -129,12 +129,12 @@ namespace Rs41Decoder
                 { }
                 catch
                 {
-                    demodulator.Close();
+                    demodulator.Dispose();
                     IsDecoding = false;
                     throw;
                 }
 
-                demodulator.Close();
+                demodulator.Dispose();
                 IsDecoding = false;
             });
         }
@@ -145,7 +145,7 @@ namespace Rs41Decoder
         public void StopDecoding()
         {
             cancellationToken?.Cancel();
-            demodulator.Close();
+            demodulator.Dispose();
             IsDecoding = false;
         }
 
@@ -174,10 +174,6 @@ namespace Rs41Decoder
             return i == Constants.FRAME_HEADER.Length;
         }
 
-        public void Dispose()
-        {
-            StopDecoding();
-            demodulator?.Dispose();
-        }
+        public void Dispose() => StopDecoding();
     }
 }
